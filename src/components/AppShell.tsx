@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import GlobalDefs from './GlobalDefs';
+import { IconDefs } from '../ui/icons';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
@@ -13,7 +13,7 @@ export default function AppShell() {
 
   return (
     <div className="app base">
-      <GlobalDefs />
+      <IconDefs />
       <Sidebar />
       <div className="app-content">
         <Topbar />
