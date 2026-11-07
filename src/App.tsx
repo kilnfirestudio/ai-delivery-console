@@ -1,4 +1,4 @@
-import { useEffect, type ComponentType } from 'react';
+import { Suspense, useEffect, type ComponentType } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import { pages } from './pages';
@@ -7,7 +7,11 @@ function Titled({ title, page: Page }: { title: string; page: ComponentType }) {
   useEffect(() => {
     document.title = `${title} · AI 交付全局控制台`;
   }, [title]);
-  return <Page />;
+  return (
+    <Suspense fallback={<main style={{ minHeight: '100vh' }} />}>
+      <Page />
+    </Suspense>
+  );
 }
 
 function NotFound() {
