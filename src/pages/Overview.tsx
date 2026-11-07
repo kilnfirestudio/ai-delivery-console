@@ -1,53 +1,121 @@
-import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { R } from '../app/routes';
 import { useData, type AttentionItem, type ConsoleData } from '../data';
 import {
-  agentById, attentionHref, attentionIn, brokenDownRequirements, countAgents, countStates, findSubtask, formatDuration, formatNumber,
+  AGENT_STATUS_LABEL, agentById, agentNow, attentionHref, attentionIn, brokenDownRequirements, countAgents, countStates, findSubtask, formatDuration, formatNumber,
   requirementHref, requirementSchedule, SUBTASK_STATE_LABEL, subtaskKey, subtasksOf, taskHref, waitedToday, waitState,
 } from '../data/selectors';
-import { Spark } from '../ui/charts';
+import { AgentTimeline, Donut, Gauge, Spark, TIMELINE_LEGEND, type DonutPart } from '../ui/charts';
 import { SubtaskTile } from '../ui/controls';
-import { GlassIcon, Robot, Sparkles } from '../ui/icons';
-import { ButtonLink, Chip, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
+import { GlassIcon, Robot, Sparkles, type IconName } from '../ui/icons';
+import { ButtonLink, CheckpointBar, Chip, CountUp, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
 
 const STATE_COLOR = { done: '#3FB950', doing: '#4F8CFF', you: '#E3A008', queue: '#3A3D44' } as const;
 
 
-/** One quiet row of today's numbers; the details live on their own pages. */
-function TodayRow({ d }: { d: ConsoleData }) {
-  const st = countStates(d.subtasks);
-  const ag = countAgents(d.agents);
-  const fp = d.observation.coreMetrics.find((m) => m.id === 'firstPass')!;
-  const gw = d.observation.gatewayToday;
-  const total = d.subtasks.length;
-  const cell = (label: string, value: string, note: ReactNode, to: string) => (
-    <Link to={to} style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, color: '#EDEEF0', textDecoration: 'none' }}>
-      <span className="muted" style={{ fontSize: 12 }}>
-        {label}
-      </span>
-      <span className="num" style={{ fontSize: 20, fontWeight: 600 }}>
-        {value}
-      </span>
-      <span className="muted" style={{ fontSize: 12 }}>
-        {note}
-      </span>
-    </Link>
-  );
+/** Today at a glance; each card opens its page. */
+function CornerIcon({ name }: { name: IconName }) {
   return (
-    <section className="card" aria-label="今天" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1.2fr', gap: 24, padding: '16px 20px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {cell('子任务', `${st.done} / ${total} 完成`, `进行中 ${st.doing} · 等你 ${st.you} · 排队 ${st.queue}`, R.breakdown)}
-        <div role="img" aria-label={`完成 ${st.done}，进行中 ${st.doing}，等你 ${st.you}，排队 ${st.queue}`} style={{ display: 'flex', gap: 2, height: 6 }}>
-          {(['done', 'doing', 'you', 'queue'] as const).map((k) => (
-            <span key={k} style={{ flex: `${st[k]} 1 0`, background: STATE_COLOR[k], borderRadius: 2 }} />
+    <div style={{ position: 'absolute', right: 14, top: 12 }}>
+      <GlassIcon name={name} size={36} />
+    </div>
+  );
+}
+
+function TodayRow({ d }: { d: ConsoleData }) {
+  const states = countStates(d.subtasks);
+  const parts: DonutPart[] = (['done', 'doing', 'you', 'queue'] as const).map((k) => ({ label: SUBTASK_STATE_LABEL[k], value: states[k], color: STATE_COLOR[k] }));
+  const ag = countAgents(d.agents);
+  const waited = d.agents.reduce((s, a) => s + waitedToday(a, d.workspace.now), 0);
+  const firstPass = d.observation.coreMetrics.find((m) => m.id === 'firstPass')!;
+  const gw = d.observation.gatewayToday;
+  const pill = { doing: { bg: 'rgba(79,140,255,.26)', bd: '#4F8CFF', cls: 'pill-run' }, you: { bg: 'rgba(227,160,8,.25)', bd: '#E3A008', cls: undefined } } as const;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.9fr 1.1fr 1fr', gap: 16 }}>
+      <Link to={R.breakdown} className="card today-card" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div>
+          <Donut parts={parts} caption="子任务" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {parts.map((p) => (
+            <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+              <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 2, background: p.color }} />
+              <span className="muted" style={{ width: 48 }}>
+                {p.label}
+              </span>
+              <span className="num" style={{ fontSize: 18 }}>
+                {p.value}
+              </span>
+            </div>
           ))}
         </div>
-      </div>
-      {cell(`${fp.name} · 本周`, `${fp.values[fp.values.length - 1]}%`, `基线 ${fp.base}%`, R.metrics)}
-      {cell(`Agent · ${d.agents.length}`, `${ag.doing} 在工作`, `等你 ${ag.you} · 空闲 ${ag.idle + ag.standby}`, R.agents)}
-      {cell('网关 · 今天', `${formatNumber(gw.calls)} 次`, `p95 ${gw.p95Ms} ms · 拒绝 ${gw.rejected} · 超时 ${gw.timeouts}`, R.live)}
-    </section>
+        <CornerIcon name="Breakdown" />
+      </Link>
+      <Link to={R.metrics} className="card today-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <CornerIcon name="Metrics" />
+        <span className="lbl" style={{ alignSelf: 'flex-start' }}>
+          {`${firstPass.name} · 本周`}
+        </span>
+        <Gauge value={firstPass.values[firstPass.values.length - 1]} base={firstPass.base} label={firstPass.name} />
+      </Link>
+      <Link to={R.agents} className="card today-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <CornerIcon name="Agents" />
+        <span className="lbl">{`Agent · ${d.agents.length}`}</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 18 }}>
+          <div className="stat">
+            <span className="muted" style={{ fontSize: 12 }}>
+              在工作
+            </span>
+            <CountUp to={ag.doing} style={{ fontSize: 30 }} />
+          </div>
+          <div className="stat">
+            <span className="muted" style={{ fontSize: 12 }}>
+              等你
+            </span>
+            <CountUp to={ag.you} style={{ fontSize: 30, color: '#F2C14E' }} />
+          </div>
+          <div className="stat">
+            <span className="muted" style={{ fontSize: 12 }}>
+              空闲
+            </span>
+            <CountUp to={ag.idle + ag.standby} style={{ fontSize: 30 }} />
+          </div>
+        </div>
+        <div role="img" aria-label={`${d.agents.length} 个 agent：${ag.doing} 个在工作，${ag.you} 个等你，${ag.idle + ag.standby} 个空闲`} style={{ display: 'flex', gap: 4 }}>
+          {d.agents.map((a) => {
+            const p = a.status === 'doing' || a.status === 'you' ? pill[a.status] : { bg: 'rgba(255,255,255,.05)', bd: 'rgba(255,255,255,.12)', cls: undefined };
+            return <span key={a.id} className={p.cls} title={`${a.name}：${AGENT_STATUS_LABEL[a.status]}`} style={{ flex: 1, height: 26, borderRadius: 2, background: p.bg, border: `1px solid ${p.bd}`, boxShadow: 'none' }} />;
+          })}
+        </div>
+        <span className="muted" style={{ fontSize: 12 }}>
+          今天 agent 一共等你 <span style={{ color: '#F2C14E', fontWeight: 600 }}>{formatDuration(waited)}</span>
+        </span>
+      </Link>
+      <Link to={R.live} className="card today-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <CornerIcon name="Live" />
+        <span className="lbl">网关 · 今天</span>
+        <div className="stat">
+          <span className="muted" style={{ fontSize: 12 }}>
+            调用次数
+          </span>
+          <span style={{ fontSize: 30 }}>{formatNumber(gw.calls)}</span>
+        </div>
+        <div title="近 60 分钟调用量">
+          <Spark values={gw.lastHour} width={220} height={46} color="#8E7CFF" />
+        </div>
+        <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
+          <span className="muted">
+            p95 <span style={{ color: '#C9CDD4' }}>{`${gw.p95Ms} ms`}</span>
+          </span>
+          <span className="muted">
+            拒绝 <span style={{ color: '#FF7B72' }}>{gw.rejected}</span>
+          </span>
+          <span className="muted">
+            超时 <span style={{ color: '#F2C14E' }}>{gw.timeouts}</span>
+          </span>
+        </div>
+      </Link>
+    </div>
   );
 }
 
@@ -56,9 +124,30 @@ const BLOCKING_ACTION: Partial<Record<AttentionItem['kind'], { tone: 'you' | 'ri
   冲突: { tone: 'risk', button: '去裁决' },
 };
 
+function PhoneThumb({ diff }: { diff?: boolean }) {
+  const bar = (h: number, bg = 'rgba(255,255,255,.08)') => <span style={{ height: h, background: bg, borderRadius: 2 }} />;
+  return (
+    <div aria-hidden="true" style={{ width: 56, height: 98, borderRadius: 11, border: '4px solid #1D1F23', background: '#16171A', padding: 4, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 4, position: 'relative', boxShadow: '0 4px 10px rgba(16,24,40,.22), inset 0 0 0 1px rgba(0,0,0,.05)' }}>
+      {bar(8)}
+      {bar(22, 'rgba(255,255,255,.14)')}
+      <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+        {bar(16)}
+        {bar(16)}
+      </span>
+      {diff ? (
+        <span style={{ position: 'absolute', left: 3, right: 3, bottom: 6, height: 12, border: '1.5px solid #D92D20', borderRadius: 2, background: 'rgba(217,45,32,0.08)' }} />
+      ) : (
+        <span style={{ height: 8, background: 'rgba(255,255,255,.08)', borderRadius: 2, marginTop: 'auto' }} />
+      )}
+    </div>
+  );
+}
+
 function NeedsYou({ d }: { d: ConsoleData }) {
   const blocking = attentionIn(d, '阻塞任务');
-  const rest = [...attentionIn(d, '需要你确认'), ...attentionIn(d, '看截图')];
+  const confirm = attentionIn(d, '需要你确认');
+  const shots = attentionIn(d, '看截图');
+  const rest = [...confirm, ...shots];
   const audits = attentionIn(d, '抽检与复验');
   const deleg = d.observation.delegation;
   const waiting = d.agents.map((a) => [a, waitedToday(a, d.workspace.now)] as const).filter(([, m]) => m > 0);
@@ -105,9 +194,14 @@ function NeedsYou({ d }: { d: ConsoleData }) {
                     {act.button}
                   </ButtonLink>
                   {sub && (
-                    <span className="muted" style={{ fontSize: 12 }}>
-                      {`${sub.id} 停在检查点 ${sub.checkpoint + 1}`}
-                    </span>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span className="muted" style={{ fontSize: 12 }}>
+                        {`${sub.id} 停在检查点 ${sub.checkpoint + 1} / 5`}
+                      </span>
+                      <div style={{ width: 120 }}>
+                        <CheckpointBar passed={sub.checkpoint} tone="you" label={`${sub.id} 已过 ${sub.checkpoint} 个检查点，停在第 ${sub.checkpoint + 1} 个`} />
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -118,22 +212,48 @@ function NeedsYou({ d }: { d: ConsoleData }) {
           <Label>{`不阻塞 · ${rest.length}`}</Label>
           <div className="raised" style={{ padding: '2px 16px 4px' }}>
             <List
-              items={rest.map((it) => ({
+              items={confirm.map((it) => ({
                 key: it.id,
                 main: (
                   <>
-                    <Chip tone={it.kind === '上提' ? 'done' : it.kind === '看截图' ? 'you' : 'doing'}>{it.kind}</Chip> {it.title}
+                    <Chip tone={it.kind === '上提' ? 'done' : 'doing'}>{it.kind}</Chip> {it.title}
                   </>
                 ),
-                meta: it.waitedMin ? `${it.summary} · ${waitState(d, it.waitedMin).label}` : `${it.summary} · ${it.since}`,
+                meta: `${it.summary} · ${it.since}`,
                 right: (
                   <Link to={attentionHref(it)} style={{ fontSize: 13 }}>
-                    {it.kind === '上提' ? '查看' : it.kind === '看截图' ? '去看' : '审核'}
+                    {it.kind === '上提' ? '查看' : '审核'}
                   </Link>
                 ),
               }))}
             />
           </div>
+          {shots.map((it) => {
+            const w = waitState(d, it.waitedMin);
+            return (
+              <Link key={it.id} to={attentionHref(it)} className="raised today-card" style={{ marginTop: 6, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <PhoneThumb />
+                  <span className="muted" aria-hidden="true" style={{ fontSize: 12 }}>
+                    →
+                  </span>
+                  <PhoneThumb diff />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                  <span>
+                    <Chip tone="you">{it.kind}</Chip> <span style={{ fontWeight: 500 }}>{it.title}</span>
+                  </span>
+                  <span className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>
+                    {it.summary}
+                  </span>
+                  <span className={w.overdue ? 'overdue' : 'muted'} style={{ fontSize: 12 }}>
+                    {w.label}
+                  </span>
+                  <span style={{ fontSize: 13, color: '#9D8FFF' }}>去看截图 →</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, margin: '16px 0 0', fontSize: 12 }}>
@@ -223,6 +343,29 @@ function BreakdownMap({ d }: { d: ConsoleData }) {
   );
 }
 
+function TimelineSection({ d }: { d: ConsoleData }) {
+  const waiting = d.agents.map((a) => [a, waitedToday(a, d.workspace.now)] as const).filter(([, m]) => m > 0);
+  const total = waiting.reduce((s, [, m]) => s + m, 0);
+  return (
+    <Section
+      id="tl-h"
+      title="Agent 今日时间轴"
+      sub={`${d.agents.length} 个 agent：谁在做、谁在等你、谁空着`}
+      right={
+        <>
+          {TIMELINE_LEGEND}
+          <TextLink to={R.agents}>打开 Agent 看板</TextLink>
+        </>
+      }
+    >
+      <AgentTimeline lanes={d.agents.map((a) => ({ agent: a, now: agentNow(d, a) }))} now={d.workspace.now} />
+      <p className="muted" style={{ margin: '12px 0 0', fontSize: 12 }}>
+        {`今天 agent 一共等你 ${formatDuration(total)}：${waiting.map(([a, m]) => `${a.name} ${m} 分钟`).join('，')}。时间轴来自网关的任务事件`}
+      </p>
+    </Section>
+  );
+}
+
 function Kpis({ d }: { d: ConsoleData }) {
   return (
     <Section id="kpi-h" variant="quiet" title="本周效果" sub="四个核心指标，近 12 周；虚线是基线。每周复盘时再细看" right={<TextLink to={R.metrics}>打开指标</TextLink>}>
@@ -272,6 +415,7 @@ export default function Overview() {
       <NeedsYou d={d} />
       <TodayRow d={d} />
       <BreakdownMap d={d} />
+      <TimelineSection d={d} />
       <Kpis d={d} />
     </PageMain>
   );
