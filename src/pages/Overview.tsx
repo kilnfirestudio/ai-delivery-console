@@ -1,119 +1,53 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { R } from '../app/routes';
 import { useData, type AttentionItem, type ConsoleData } from '../data';
 import {
-  AGENT_STATUS_LABEL, agentById, agentNow, attentionIn, brokenDownRequirements, countAgents, countStates, formatDuration,
-  formatNumber, requirementSchedule, SUBTASK_STATE_LABEL, subtasksOf, waitedToday,
+  agentById, attentionHref, attentionIn, brokenDownRequirements, countAgents, countStates, findSubtask, formatDuration, formatNumber,
+  requirementHref, requirementSchedule, SUBTASK_STATE_LABEL, subtaskKey, subtasksOf, taskHref, waitedToday, waitState,
 } from '../data/selectors';
-import { AgentTimeline, Donut, Gauge, Spark, TIMELINE_LEGEND, type DonutPart } from '../ui/charts';
+import { Spark } from '../ui/charts';
 import { SubtaskTile } from '../ui/controls';
-import { GlassIcon, Robot, Sparkles, type IconName } from '../ui/icons';
-import { ButtonLink, Chip, CountUp, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
+import { GlassIcon, Robot, Sparkles } from '../ui/icons';
+import { ButtonLink, Chip, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
 
 const STATE_COLOR = { done: '#3FB950', doing: '#4F8CFF', you: '#E3A008', queue: '#3A3D44' } as const;
 
-function CornerIcon({ name }: { name: IconName }) {
-  return (
-    <div style={{ position: 'absolute', right: 14, top: 12 }}>
-      <GlassIcon name={name} size={36} />
-    </div>
-  );
-}
 
-function TodayStrip({ d }: { d: ConsoleData }) {
-  const states = countStates(d.subtasks);
-  const parts: DonutPart[] = (['done', 'doing', 'you', 'queue'] as const).map((k) => ({ label: SUBTASK_STATE_LABEL[k], value: states[k], color: STATE_COLOR[k] }));
+/** One quiet row of today's numbers; the details live on their own pages. */
+function TodayRow({ d }: { d: ConsoleData }) {
+  const st = countStates(d.subtasks);
   const ag = countAgents(d.agents);
-  const waited = d.agents.reduce((s, a) => s + waitedToday(a, d.workspace.now), 0);
-  const firstPass = d.observation.coreMetrics.find((m) => m.id === 'firstPass')!;
+  const fp = d.observation.coreMetrics.find((m) => m.id === 'firstPass')!;
   const gw = d.observation.gatewayToday;
-  const pill = { doing: { bg: 'rgba(79,140,255,.26)', bd: '#4F8CFF', cls: 'pill-run' }, you: { bg: 'rgba(227,160,8,.25)', bd: '#E3A008', cls: 'breathe' } } as const;
+  const total = d.subtasks.length;
+  const cell = (label: string, value: string, note: ReactNode, to: string) => (
+    <Link to={to} style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, color: '#EDEEF0', textDecoration: 'none' }}>
+      <span className="muted" style={{ fontSize: 12 }}>
+        {label}
+      </span>
+      <span className="num" style={{ fontSize: 20, fontWeight: 600 }}>
+        {value}
+      </span>
+      <span className="muted" style={{ fontSize: 12 }}>
+        {note}
+      </span>
+    </Link>
+  );
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.9fr 1.1fr 1fr', gap: 16 }}>
-      <div className="card" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 20 }}>
-        <div>
-          <Donut parts={parts} caption="子任务" />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {parts.map((p) => (
-            <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-              <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 2, background: p.color }} />
-              <span className="muted" style={{ width: 48 }}>
-                {p.label}
-              </span>
-              <span className="num" style={{ fontSize: 18 }}>
-                {p.value}
-              </span>
-            </div>
+    <section className="card" aria-label="今天" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1.2fr', gap: 24, padding: '16px 20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {cell('子任务', `${st.done} / ${total} 完成`, `进行中 ${st.doing} · 等你 ${st.you} · 排队 ${st.queue}`, R.breakdown)}
+        <div role="img" aria-label={`完成 ${st.done}，进行中 ${st.doing}，等你 ${st.you}，排队 ${st.queue}`} style={{ display: 'flex', gap: 2, height: 6 }}>
+          {(['done', 'doing', 'you', 'queue'] as const).map((k) => (
+            <span key={k} style={{ flex: `${st[k]} 1 0`, background: STATE_COLOR[k], borderRadius: 2 }} />
           ))}
         </div>
-        <CornerIcon name="Breakdown" />
       </div>
-      <div className="card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-        <CornerIcon name="Metrics" />
-        <span className="lbl" style={{ alignSelf: 'flex-start' }}>
-          {`${firstPass.name} · 本周`}
-        </span>
-        <Gauge value={firstPass.values[firstPass.values.length - 1]} base={firstPass.base} label={firstPass.name} />
-      </div>
-      <div className="card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <CornerIcon name="Agents" />
-        <span className="lbl">{`Agent · ${d.agents.length}`}</span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 18 }}>
-          <div className="stat">
-            <span className="muted" style={{ fontSize: 12 }}>
-              在工作
-            </span>
-            <CountUp to={ag.doing} style={{ fontSize: 30 }} />
-          </div>
-          <div className="stat">
-            <span className="muted" style={{ fontSize: 12 }}>
-              等你
-            </span>
-            <CountUp to={ag.you} style={{ fontSize: 30, color: '#F2C14E' }} />
-          </div>
-          <div className="stat">
-            <span className="muted" style={{ fontSize: 12 }}>
-              空闲
-            </span>
-            <CountUp to={ag.idle + ag.standby} style={{ fontSize: 30 }} />
-          </div>
-        </div>
-        <div role="img" aria-label={`${d.agents.length} 个 agent：${ag.doing} 个在工作，${ag.you} 个等你，${ag.idle + ag.standby} 个空闲`} style={{ display: 'flex', gap: 4 }}>
-          {d.agents.map((a) => {
-            const p = a.status === 'doing' || a.status === 'you' ? pill[a.status] : { bg: 'rgba(255,255,255,.05)', bd: 'rgba(255,255,255,.12)', cls: undefined };
-            return <span key={a.id} className={p.cls} title={`${a.name}：${AGENT_STATUS_LABEL[a.status]}`} style={{ flex: 1, height: 26, borderRadius: 2, background: p.bg, border: `1px solid ${p.bd}`, boxShadow: 'none' }} />;
-          })}
-        </div>
-        <span className="muted" style={{ fontSize: 12 }}>
-          今天 agent 一共等你 <span style={{ color: '#F2C14E', fontWeight: 600 }}>{formatDuration(waited)}</span>
-        </span>
-      </div>
-      <div className="card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <CornerIcon name="Live" />
-        <span className="lbl">网关 · 今天</span>
-        <div className="stat">
-          <span className="muted" style={{ fontSize: 12 }}>
-            调用次数
-          </span>
-          <span style={{ fontSize: 30 }}>{formatNumber(gw.calls)}</span>
-        </div>
-        <div title="近 60 分钟调用量">
-          <Spark values={gw.lastHour} width={220} height={46} color="#8E7CFF" />
-        </div>
-        <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
-          <span className="muted">
-            p95 <span style={{ color: '#C9CDD4' }}>{`${gw.p95Ms} ms`}</span>
-          </span>
-          <span className="muted">
-            拒绝 <span style={{ color: '#FF7B72' }}>{gw.rejected}</span>
-          </span>
-          <span className="muted">
-            超时 <span style={{ color: '#F2C14E' }}>{gw.timeouts}</span>
-          </span>
-        </div>
-      </div>
-    </div>
+      {cell(`${fp.name} · 本周`, `${fp.values[fp.values.length - 1]}%`, `基线 ${fp.base}%`, R.metrics)}
+      {cell(`Agent · ${d.agents.length}`, `${ag.doing} 在工作`, `等你 ${ag.you} · 空闲 ${ag.idle + ag.standby}`, R.agents)}
+      {cell('网关 · 今天', `${formatNumber(gw.calls)} 次`, `p95 ${gw.p95Ms} ms · 拒绝 ${gw.rejected} · 超时 ${gw.timeouts}`, R.live)}
+    </section>
   );
 }
 
@@ -122,34 +56,13 @@ const BLOCKING_ACTION: Partial<Record<AttentionItem['kind'], { tone: 'you' | 'ri
   冲突: { tone: 'risk', button: '去裁决' },
 };
 
-function PhoneThumb({ diff }: { diff?: boolean }) {
-  const bar = (h: number, bg = 'rgba(255,255,255,.08)') => <span style={{ height: h, background: bg, borderRadius: 2 }} />;
-  return (
-    <div aria-hidden="true" style={{ width: 56, height: 98, borderRadius: 11, border: '4px solid #1D1F23', background: '#16171A', padding: 4, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 4, position: 'relative', boxShadow: '0 4px 10px rgba(16,24,40,.22), inset 0 0 0 1px rgba(0,0,0,.05)' }}>
-      {bar(8)}
-      {bar(22, 'rgba(255,255,255,.14)')}
-      <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-        {bar(16)}
-        {bar(16)}
-      </span>
-      {diff ? (
-        <span className="diffp" style={{ position: 'absolute', left: 3, right: 3, bottom: 6, height: 12, border: '1.5px solid #D92D20', borderRadius: 2, background: 'rgba(217,45,32,0.08)' }} />
-      ) : (
-        <span style={{ height: 8, background: 'rgba(255,255,255,.08)', borderRadius: 2, marginTop: 'auto' }} />
-      )}
-    </div>
-  );
-}
-
 function NeedsYou({ d }: { d: ConsoleData }) {
   const blocking = attentionIn(d, '阻塞任务');
-  const confirm = attentionIn(d, '需要你确认');
-  const shots = attentionIn(d, '看截图');
+  const rest = [...attentionIn(d, '需要你确认'), ...attentionIn(d, '看截图')];
   const audits = attentionIn(d, '抽检与复验');
-  const total = blocking.length + confirm.length + shots.length;
-  const waited = d.agents.reduce((s, a) => s + waitedToday(a, d.workspace.now), 0);
   const deleg = d.observation.delegation;
-  const shot = shots[0];
+  const waiting = d.agents.map((a) => [a, waitedToday(a, d.workspace.now)] as const).filter(([, m]) => m > 0);
+  const waitedTotal = waiting.reduce((sum, [, m]) => sum + m, 0);
   return (
     <section className="tier1" aria-labelledby="you-h">
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -157,96 +70,81 @@ function NeedsYou({ d }: { d: ConsoleData }) {
           <GlassIcon name="Bell" size={44} motion="swing" />
           <div>
             <h2 id="you-h" style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
-              {`需要你处理 · ${total}`}
+              {`需要你处理 · ${blocking.length + rest.length}`}
             </h2>
             <p className="muted" style={{ margin: '4px 0 0', fontSize: 13 }}>
-              阻塞任务的排在最前面；只有后果大又拿不准的、或必须由你确认的才会到这里
+              {`${blocking.length} 件正在阻塞 agent，先处理左边；右边的不阻塞，可以稍后`}
             </p>
           </div>
         </div>
         <TextLink to={R.review}>打开待审</TextLink>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr 0.85fr', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Label>{`阻塞任务 · ${blocking.length}`}</Label>
           {blocking.map((it) => {
             const act = BLOCKING_ACTION[it.kind] ?? { tone: 'you' as const, button: '处理' };
+            const w = waitState(d, it.waitedMin);
+            const sub = it.refs?.subtask ? findSubtask(d, it.refs.subtask) : undefined;
             return (
-              <div key={it.id} className="raised" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div key={it.id} className="raised" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8, ...(w.overdue ? { borderColor: 'rgba(248,81,73,.45)' } : {}) }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
                   <Chip tone={act.tone} live>
                     {it.kind}
                   </Chip>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#F2C14E' }}>{`已等 ${it.waitedMin} 分钟`}</span>
+                  <span className={w.overdue ? 'overdue' : undefined} style={{ fontSize: 14, fontWeight: 700, color: '#F2C14E' }}>
+                    {w.label}
+                  </span>
                 </div>
-                <span style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.5 }}>{it.title}</span>
-                <span className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>
+                <span style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.5 }}>{it.title}</span>
+                <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
                   {it.summary}
                 </span>
-                <ButtonLink to={it.route} style={{ alignSelf: 'flex-start' }}>
-                  {act.button}
-                </ButtonLink>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <ButtonLink primary to={attentionHref(it)}>
+                    {act.button}
+                  </ButtonLink>
+                  {sub && (
+                    <span className="muted" style={{ fontSize: 12 }}>
+                      {`${sub.id} 停在检查点 ${sub.checkpoint + 1}`}
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <Label>{`需要你确认 · ${confirm.length}`}</Label>
+          <Label>{`不阻塞 · ${rest.length}`}</Label>
           <div className="raised" style={{ padding: '2px 16px 4px' }}>
             <List
-              items={confirm.map((it) => ({
+              items={rest.map((it) => ({
                 key: it.id,
                 main: (
                   <>
-                    <Chip tone={it.kind === '上提' ? 'done' : 'doing'}>{it.kind}</Chip> {it.title}
+                    <Chip tone={it.kind === '上提' ? 'done' : it.kind === '看截图' ? 'you' : 'doing'}>{it.kind}</Chip> {it.title}
                   </>
                 ),
-                meta: `${it.summary} · ${it.since}`,
+                meta: it.waitedMin ? `${it.summary} · ${waitState(d, it.waitedMin).label}` : `${it.summary} · ${it.since}`,
                 right: (
-                  <Link to={it.route} style={{ fontSize: 13 }}>
-                    {it.kind === '上提' ? '查看' : '审核'}
+                  <Link to={attentionHref(it)} style={{ fontSize: 13 }}>
+                    {it.kind === '上提' ? '查看' : it.kind === '看截图' ? '去看' : '审核'}
                   </Link>
                 ),
               }))}
             />
           </div>
         </div>
-        {shot && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Label>{`看截图 · ${shots.length}`}</Label>
-            <div className="raised" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Chip tone="you" live>
-                  看截图
-                </Chip>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#F2C14E' }}>{`已等 ${shot.waitedMin} 分钟`}</span>
-              </div>
-              <span style={{ fontSize: 15, fontWeight: 600 }}>{shot.title}</span>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-                <PhoneThumb />
-                <span className="muted" style={{ fontSize: 11, paddingBottom: 40 }}>
-                  →
-                </span>
-                <PhoneThumb diff />
-                <span className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>
-                  {shot.summary.split(' · ').map((line, i) => (
-                    <span key={line}>
-                      {i > 0 && <br />}
-                      {line}
-                    </span>
-                  ))}
-                </span>
-              </div>
-              <ButtonLink to={shot.route} style={{ alignSelf: 'flex-start' }}>
-                去看截图
-              </ButtonLink>
-            </div>
-          </div>
-        )}
       </div>
-      <p className="muted" style={{ margin: '16px 0 0', fontSize: 12 }}>
-        {`另有 ${audits.length} 件抽检与复验，不急 · 委托规则 ${deleg.version} 今天自动确认 ${deleg.confirmedToday} 条 · 今天 agent 一共等你 ${formatDuration(waited)}`}
-      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, margin: '16px 0 0', fontSize: 12 }}>
+        <span className="muted">
+          {`在等你的 agent：${waiting.map(([a, m]) => `${a.name} ${m} 分钟`).join('，')}，今天合计 `}
+          <span style={{ color: '#F2C14E', fontWeight: 600 }}>{formatDuration(waitedTotal)}</span>
+          {' · '}
+          <Link to={R.agents}>Agent 看板</Link>
+        </span>
+        <span className="muted">{`另有 ${audits.length} 件抽检与复验，不急 · 委托规则 ${deleg.version} 今天自动确认 ${deleg.confirmedToday} 条`}</span>
+      </div>
     </section>
   );
 }
@@ -288,9 +186,9 @@ function BreakdownMap({ d }: { d: ConsoleData }) {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {preqs.length ? (
                   preqs.map((r) => (
-                    <div key={r.id} className="well" style={{ flex: '0 1 auto', minWidth: 220, display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 10 }}>
+                    <div key={r.id} className="well" style={{ flex: '0 1 auto', minWidth: 220, display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 10, ...(subtasksOf(d, r.id).some((x) => x.state === 'you') ? { borderColor: 'rgba(227,160,8,.45)' } : {}) }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <Link to={R.breakdown} style={{ fontSize: 13, fontWeight: 600, color: '#EDEEF0', textDecoration: 'none' }}>
+                        <Link to={requirementHref(r.id)} style={{ fontSize: 13, fontWeight: 600, color: '#EDEEF0', textDecoration: 'none' }}>
                           {`${r.id} · ${r.title}`}
                         </Link>
                         <span className="muted" style={{ fontSize: 12 }}>
@@ -304,7 +202,7 @@ function BreakdownMap({ d }: { d: ConsoleData }) {
                             .filter(Boolean)
                             .join(' · ');
                           return (
-                            <SubtaskTile key={s.id} id={s.id} state={s.state} title={tip} to={R.task} />
+                            <SubtaskTile key={s.id} id={s.id} state={s.state} title={tip} to={taskHref(subtaskKey(s))} />
                           );
                         })}
                       </div>
@@ -321,29 +219,6 @@ function BreakdownMap({ d }: { d: ConsoleData }) {
           );
         })}
       </div>
-    </Section>
-  );
-}
-
-function TimelineSection({ d }: { d: ConsoleData }) {
-  const waiting = d.agents.map((a) => [a, waitedToday(a, d.workspace.now)] as const).filter(([, m]) => m > 0);
-  const total = waiting.reduce((s, [, m]) => s + m, 0);
-  return (
-    <Section
-      id="tl-h"
-      title="Agent 今日时间轴"
-      sub={`${d.agents.length} 个 agent：谁在做、谁在等你、谁空着`}
-      right={
-        <>
-          {TIMELINE_LEGEND}
-          <TextLink to={R.agents}>打开 Agent 看板</TextLink>
-        </>
-      }
-    >
-      <AgentTimeline lanes={d.agents.map((a) => ({ agent: a, now: agentNow(d, a) }))} now={d.workspace.now} />
-      <p className="muted" style={{ margin: '12px 0 0', fontSize: 12 }}>
-        {`今天 agent 一共等你 ${formatDuration(total)}：${waiting.map(([a, m]) => `${a.name} ${m} 分钟`).join('，')}。时间轴来自网关的任务事件`}
-      </p>
     </Section>
   );
 }
@@ -394,10 +269,9 @@ export default function Overview() {
         sub={`${needs} 件事在等你，其中 ${blocking} 件正在阻塞任务 · ${ag.doing} 个 agent 在工作，${ag.you} 个在等你`}
         right={<SegControl label="按项目筛选" options={['全部项目', ...d.projects.map((p) => p.short)]} />}
       />
-      <TodayStrip d={d} />
       <NeedsYou d={d} />
+      <TodayRow d={d} />
       <BreakdownMap d={d} />
-      <TimelineSection d={d} />
       <Kpis d={d} />
     </PageMain>
   );

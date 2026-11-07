@@ -22,10 +22,7 @@ export function Spark({ values, base, width = 160, height = 40, color = '#9D8FFF
       <polyline points={pts.map(([px, py]) => `${f1(px)},${f1(py)}`).join(' ')} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" pathLength={100} strokeDasharray="100" strokeDashoffset="100">
         <animate attributeName="stroke-dashoffset" from="100" to="0" dur="1.2s" begin="0.2s" {...DRAW} />
       </polyline>
-      <circle cx={f1(lx)} cy={f1(ly)} r="3" fill={color}>
-        <animate attributeName="r" values="3;5.5;3" dur="2s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="1;.55;1" dur="2s" repeatCount="indefinite" />
-      </circle>
+      <circle cx={f1(lx)} cy={f1(ly)} r="3" fill={color} />
     </svg>
   );
 }
@@ -151,9 +148,7 @@ export function Donut({ parts, caption, size = 124, thickness: th = 14 }: { part
   });
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${caption}状态：${parts.map((p) => `${p.label} ${p.value}`).join('，')}`} style={{ overflow: 'visible' }}>
-      <circle cx={c} cy={c} r={r + th / 2 + 4} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="1" strokeDasharray="2 6">
-        <animateTransform attributeName="transform" type="rotate" from={`0 ${c} ${c}`} to={`360 ${c} ${c}`} dur="24s" repeatCount="indefinite" />
-      </circle>
+      <circle cx={c} cy={c} r={r + th / 2 + 4} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="1" strokeDasharray="2 6" />
       <circle cx={c} cy={c} r={r} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={th} />
       {arcs}
       <text x={c} y={c + 4} textAnchor="middle" fontSize="28" fontWeight="700" fill="#F8FBFF" fontFamily="DIN Alternate, Barlow, Inter, sans-serif">
@@ -203,16 +198,15 @@ export function Gauge({ value, base, label, size = 168 }: { value: number; base:
       <circle r="4" fill="#FEFEFE" filter={`url(#gl${uid})`} opacity="0">
         <animate attributeName="opacity" from="0" to="1" dur="0.2s" begin="0.3s" fill="freeze" />
         <animateMotion dur="1.4s" begin="0.3s" fill="freeze" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines=".2 .8 .2 1" path={arc} />
-        <animate attributeName="r" values="4;6;4" dur="1.8s" begin="1.7s" repeatCount="indefinite" />
       </circle>
-      <line x1={f1(bx1)} y1={f1(by1)} x2={f1(bx2)} y2={f1(by2)} stroke="#E3A008" strokeWidth="2">
+      <line x1={f1(bx1)} y1={f1(by1)} x2={f1(bx2)} y2={f1(by2)} stroke="#8A8F98" strokeWidth="2">
         <title>{`基线 ${base}%`}</title>
       </line>
       <text x={c} y={c + 2} textAnchor="middle" fontSize="30" fontWeight="700" fill="#F8FBFF" fontFamily="DIN Alternate, Barlow, Inter, sans-serif">
         {`${value}%`}
       </text>
       <text x={c} y={c + 22} textAnchor="middle" fontSize="11" fill="#8A8F98">
-        {`基线 ${base}%（黄线）`}
+        {`基线 ${base}%（灰线）`}
       </text>
     </svg>
   );
@@ -220,7 +214,7 @@ export function Gauge({ value, base, label, size = 168 }: { value: number; base:
 
 const BLOCK_STYLE: Record<TimelineBlock['kind'], CSSProperties> = {
   past: { backgroundColor: 'rgba(124,108,255,.14)', boxShadow: 'inset 0 0 0 1px rgba(124,108,255,.28)', color: '#C9CDD4' },
-  work: { backgroundColor: '#6E5CF6', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.18)', color: '#FFFFFF' },
+  work: { backgroundColor: '#3D7BF0', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.18)', color: '#FFFFFF' },
   wait: { backgroundColor: '#E3A008', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.18)', color: '#1A1200' },
 };
 
@@ -228,7 +222,7 @@ export const TIMELINE_LEGEND = (
   <Legend
     items={[
       [{ background: 'rgba(124,108,255,.14)', boxShadow: 'inset 0 0 0 1px rgba(124,108,255,.28)' }, '今天已做完的'],
-      [{ background: 'linear-gradient(90deg, #7C6CFF, #4F8CFF)' }, '正在做'],
+      [{ background: '#4F8CFF' }, '正在做'],
       [{ background: '#E3A008' }, '等你'],
       [{ background: '#0C0D0F', border: '1px solid rgba(255,255,255,.1)' }, '空闲'],
       [{ background: '#F85149', width: 2, borderRadius: 0 }, '现在'],

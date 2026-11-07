@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
-import { useData, type AttentionItem } from '../data';
-import { ATTENTION_TONE, reviewQueue } from '../data/selectors';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useData } from '../data';
+import { ATTENTION_TONE, attentionHref, reviewQueue, waitState } from '../data/selectors';
 import { Chip, PageHeader, PageMain, Rich } from '../ui/primitives';
 
 const GROUP_TONE = { 阻塞任务: 'risk', 需要你确认: 'you', 抽检与复验: 'queue', 看截图: 'you' } as const;
@@ -11,8 +12,31 @@ export default function Review() {
   const d = useData();
   const queue = reviewQueue(d);
   const groups = [...new Set(queue.map((a) => a.group))].map((g) => ({ name: g, items: queue.filter((a) => a.group === g) }));
-  const selected = queue.find((a) => a.kind === '候选' && a.refs?.candidate) as AttentionItem;
-  const cand = d.knowledge.find((k) => k.id === selected?.refs?.candidate);
+  const [params, setParams] = useSearchParams();
+  const [handled, setHandled] = useState<string[]>([]);
+  const selected = queue.find((a) => a.id === params.get('item')) ?? queue.find((a) => a.kind === '候选') ?? queue[0];
+  const select = (id: string) => setParams({ item: id }, { replace: true });
+  /** Mark the selected item handled and move to the next open one. */
+  const finish = () => {
+    const done = [...handled, selected.id];
+    setHandled(done);
+    const order = [...queue.slice(queue.indexOf(selected) + 1), ...queue];
+    const next = order.find((a) => !done.includes(a.id));
+    if (next) select(next.id);
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest('input, textarea, select')) return;
+      const i = queue.indexOf(selected);
+      if (e.key === 'j' || e.key === 'ArrowDown') select(queue[Math.min(queue.length - 1, i + 1)].id);
+      else if (e.key === 'k' || e.key === 'ArrowUp') select(queue[Math.max(0, i - 1)].id);
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+  const cand = selected.kind === '候选' ? d.knowledge.find((k) => k.id === selected.refs?.candidate) : undefined;
   const rec = d.knowledgeRecords.find((r) => r.id === cand?.id);
   const h = d.reviewHealth;
   const deleg = d.observation.delegation;
@@ -73,20 +97,27 @@ export default function Review() {
       </section>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
         <section aria-labelledby="q-h" style={{ flex: '1 1 360px', maxWidth: 440, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <h2 id="q-h" style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
-            {`队列 · ${queue.length}`}
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <h2 id="q-h" style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
+              {`队列 · 还剩 ${queue.length - handled.length}`}
+            </h2>
+            <span className="muted" style={{ fontSize: 12 }}>
+              <span className="kbd">J</span> <span className="kbd">K</span> 切换
+            </span>
+          </div>
           {groups.map((g) => (
             <div key={g.name} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#A1A6B0' }}>{g.name}</p>
               {g.items.map((it) => {
-                const sel = it.id === selected?.id;
+                const sel = it.id === selected.id;
+                const done = handled.includes(it.id);
+                const w = waitState(d, it.waitedMin);
                 return (
-                  <Link key={it.id} to={it.route} aria-current={sel ? 'true' : undefined} style={{ textDecoration: 'none', color: '#EDEEF0', background: '#16171A', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, ...(sel ? { borderColor: '#6E5CF6', boxShadow: '0 0 0 1px #6E5CF6' } : {}) }}>
+                  <Link key={it.id} to={`?item=${it.id}`} replace aria-current={sel ? 'true' : undefined} style={{ opacity: done ? 0.45 : 1, textDecoration: 'none', color: '#EDEEF0', background: '#16171A', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6, ...(sel ? { borderColor: '#6E5CF6', boxShadow: '0 0 0 1px #6E5CF6' } : {}) }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                      <Chip tone={ATTENTION_TONE[it.kind]}>{it.kind}</Chip>
-                      <span className="muted" style={{ fontSize: 12 }}>
-                        {it.waitedMin ? `${it.waitedMin} 分钟` : it.since}
+                      <Chip tone={done ? 'done' : ATTENTION_TONE[it.kind]}>{done ? '已处理' : it.kind}</Chip>
+                      <span className={`muted${w.overdue ? ' overdue' : ''}`} style={{ fontSize: 12 }}>
+                        {it.waitedMin ? (w.overdue ? `${it.waitedMin} 分钟 · 超时` : `${it.waitedMin} 分钟`) : it.since}
                       </span>
                     </div>
                     <span style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.5 }}>{it.title}</span>
@@ -99,6 +130,46 @@ export default function Review() {
             </div>
           ))}
         </section>
+        {!(cand && rec) && (
+          <section className="card" aria-labelledby="dt-h" style={{ flex: '999 1 640px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              <Chip tone={ATTENTION_TONE[selected.kind]}>{selected.kind}</Chip>
+              <Chip>{selected.group}</Chip>
+              {selected.waitedMin !== undefined && (
+                <span className={waitState(d, selected.waitedMin).overdue ? 'overdue' : 'muted'} style={{ fontSize: 13, fontWeight: 600 }}>
+                  {waitState(d, selected.waitedMin).label}
+                </span>
+              )}
+            </div>
+            <h2 id="dt-h" style={{ margin: 0, fontSize: 22, fontWeight: 600, lineHeight: 1.4 }}>
+              {selected.title}
+            </h2>
+            <p className="muted" style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>
+              {selected.detail}
+            </p>
+            {selected.body && (
+              <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(248,81,73,.08)', fontSize: 14, lineHeight: 1.6 }}>
+                <Rich text={selected.body} />
+              </div>
+            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,.08)' }}>
+              {attentionHref(selected).startsWith('/review') ? (
+                <button className="btn btn-p" type="button" onClick={finish}>
+                  处理完成，下一件
+                </button>
+              ) : (
+                <>
+                  <Link className="btn btn-p" to={attentionHref(selected)}>
+                    去处理
+                  </Link>
+                  <button className="btn" type="button" onClick={finish}>
+                    稍后再看，下一件
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
+        )}
         {cand && rec && (
           <section className="card" aria-labelledby="dt-h" style={{ flex: '999 1 640px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -210,13 +281,13 @@ export default function Review() {
               </label>
               <textarea id="why" rows={2} placeholder="例如：客户 A 主题沿用旧版断点，源码已确认" style={{ fontFamily: 'inherit', fontSize: 14, padding: '10px 12px', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, resize: 'vertical' }} />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <button className="btn btn-p" type="button">
-                  确认
+                <button className="btn btn-p" type="button" onClick={finish}>
+                  确认，下一件
                 </button>
                 <button className="btn" type="button">
                   修改字段后确认
                 </button>
-                <button className="btn" type="button">
+                <button className="btn" type="button" onClick={finish}>
                   驳回
                 </button>
               </div>
