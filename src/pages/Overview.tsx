@@ -1,14 +1,16 @@
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { R } from '../app/routes';
-import { useData, type AttentionItem, type ConsoleData } from '../data';
+import { CHECKPOINTS, useData, type AttentionItem, type ClockTime, type ConsoleData } from '../data';
 import {
-  AGENT_STATUS_LABEL, agentById, agentNow, attentionHref, attentionIn, brokenDownRequirements, countAgents, countStates, findSubtask, formatDuration, formatNumber,
-  requirementHref, requirementSchedule, SUBTASK_STATE_LABEL, subtaskKey, subtasksOf, taskHref, waitedToday, waitState,
+  AGENT_STATUS_LABEL, agentById, agentNow, ATTENTION_TONE, attentionHref, attentionIn, brokenDownRequirements, countAgents, countStates, findSubtask, formatDuration, formatNumber,
+  requirementHref, requirementSchedule, SUBTASK_STATE_LABEL, subtaskKey, subtasksOf, taskHref, toMinutes, waitedToday, waitState,
 } from '../data/selectors';
 import { AgentTimeline, Donut, Gauge, Spark, TIMELINE_LEGEND, type DonutPart } from '../ui/charts';
 import { SubtaskTile } from '../ui/controls';
-import { GlassIcon, Robot, Sparkles, type IconName } from '../ui/icons';
-import { ButtonLink, CheckpointBar, Chip, CountUp, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
+import { GlassIcon, LineIcon, Robot, Sparkles, type IconName } from '../ui/icons';
+import { ButtonLink, Chip, CountUp, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
+import { TINTS } from '../ui/tints';
 
 const STATE_COLOR = { done: '#3FB950', doing: '#4F8CFF', you: '#E3A008', queue: '#3A3D44' } as const;
 
@@ -124,21 +126,38 @@ const BLOCKING_ACTION: Partial<Record<AttentionItem['kind'], { tone: 'you' | 'ri
   冲突: { tone: 'risk', button: '去裁决' },
 };
 
+const RISK = TINTS.rose.base;
+
+/** Placeholder block in a phone thumbnail; `strong` stacks a second .bar for the brighter hero block. */
+function ThumbBar({ h, strong, style }: { h: number; strong?: boolean; style?: CSSProperties }) {
+  return <span className="bar" style={{ height: h, borderRadius: 2, ...style }}>{strong && <span className="bar" style={{ display: 'block', height: '100%', borderRadius: 0 }} />}</span>;
+}
+
 function PhoneThumb({ diff }: { diff?: boolean }) {
-  const bar = (h: number, bg = 'rgba(255,255,255,.08)') => <span style={{ height: h, background: bg, borderRadius: 2 }} />;
   return (
-    <div aria-hidden="true" style={{ width: 56, height: 98, borderRadius: 11, border: '4px solid #1D1F23', background: '#16171A', padding: 4, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 4, position: 'relative', boxShadow: '0 4px 10px rgba(16,24,40,.22), inset 0 0 0 1px rgba(0,0,0,.05)' }}>
-      {bar(8)}
-      {bar(22, 'rgba(255,255,255,.14)')}
+    <div aria-hidden="true" className="screen" style={{ width: 56, height: 98, borderRadius: 11, borderWidth: 4, padding: 4, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
+      <ThumbBar h={8} />
+      <ThumbBar h={22} strong />
       <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-        {bar(16)}
-        {bar(16)}
+        <ThumbBar h={16} />
+        <ThumbBar h={16} />
       </span>
       {diff ? (
-        <span style={{ position: 'absolute', left: 3, right: 3, bottom: 6, height: 12, border: '1.5px solid #D92D20', borderRadius: 2, background: 'rgba(217,45,32,0.08)' }} />
+        <span style={{ position: 'absolute', left: 3, right: 3, bottom: 6, height: 12, border: `1.5px solid ${RISK}`, borderRadius: 2, background: `${RISK}14` }} />
       ) : (
-        <span style={{ height: 8, background: 'rgba(255,255,255,.08)', borderRadius: 2, marginTop: 'auto' }} />
+        <ThumbBar h={8} style={{ marginTop: 'auto' }} />
       )}
+    </div>
+  );
+}
+
+/** Checkpoint battery for a stuck subtask: passed cells green, the one it is stuck at amber. */
+function StuckCheckpoints({ passed, label }: { passed: number; label: string }) {
+  return (
+    <div className="cp5" role="img" aria-label={label} style={{ width: 120 }}>
+      {CHECKPOINTS.map((name, i) => (
+        <span key={name} className={i < passed ? 'cp-done' : i === passed ? 'cp-you' : undefined} />
+      ))}
     </div>
   );
 }
@@ -168,20 +187,20 @@ function NeedsYou({ d }: { d: ConsoleData }) {
         </div>
         <TextLink to={R.review}>打开待审</TextLink>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' }}>
+        <div style={{ flex: '1.5 1 360px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Label>{`阻塞任务 · ${blocking.length}`}</Label>
           {blocking.map((it) => {
             const act = BLOCKING_ACTION[it.kind] ?? { tone: 'you' as const, button: '处理' };
             const w = waitState(d, it.waitedMin);
             const sub = it.refs?.subtask ? findSubtask(d, it.refs.subtask) : undefined;
             return (
-              <div key={it.id} className="raised" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8, ...(w.overdue ? { borderColor: 'rgba(248,81,73,.45)' } : {}) }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+              <div key={it.id} className="raised" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8, ...(w.overdue ? { borderColor: `${RISK}73` } : {}) }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
                   <Chip tone={act.tone} live>
                     {it.kind}
                   </Chip>
-                  <span className={w.overdue ? 'overdue' : undefined} style={{ fontSize: 14, fontWeight: 700, color: '#F2C14E' }}>
+                  <span className={w.overdue ? 'overdue' : 's-you'} style={{ fontSize: 14, fontWeight: 700, background: 'none' }}>
                     {w.label}
                   </span>
                 </div>
@@ -189,18 +208,16 @@ function NeedsYou({ d }: { d: ConsoleData }) {
                 <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
                   {it.summary}
                 </span>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
                   <ButtonLink primary to={attentionHref(it)}>
                     {act.button}
                   </ButtonLink>
                   {sub && (
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span className="muted" style={{ fontSize: 12 }}>
-                        {`${sub.id} 停在检查点 ${sub.checkpoint + 1} / 5`}
+                        {`${sub.id} 停在检查点 ${sub.checkpoint + 1} / ${CHECKPOINTS.length}`}
                       </span>
-                      <div style={{ width: 120 }}>
-                        <CheckpointBar passed={sub.checkpoint} tone="you" label={`${sub.id} 已过 ${sub.checkpoint} 个检查点，停在第 ${sub.checkpoint + 1} 个`} />
-                      </div>
+                      <StuckCheckpoints passed={sub.checkpoint} label={`${sub.id} 已过 ${sub.checkpoint} 个检查点，停在第 ${sub.checkpoint + 1} 个`} />
                     </div>
                   )}
                 </div>
@@ -208,7 +225,7 @@ function NeedsYou({ d }: { d: ConsoleData }) {
             );
           })}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ flex: '1 1 240px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <Label>{`不阻塞 · ${rest.length}`}</Label>
           <div className="raised" style={{ padding: '2px 16px 4px' }}>
             <List
@@ -216,7 +233,7 @@ function NeedsYou({ d }: { d: ConsoleData }) {
                 key: it.id,
                 main: (
                   <>
-                    <Chip tone={it.kind === '上提' ? 'done' : 'doing'}>{it.kind}</Chip> {it.title}
+                    <Chip tone={ATTENTION_TONE[it.kind]}>{it.kind}</Chip> {it.title}
                   </>
                 ),
                 meta: `${it.summary} · ${it.since}`,
@@ -241,7 +258,7 @@ function NeedsYou({ d }: { d: ConsoleData }) {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
                   <span>
-                    <Chip tone="you">{it.kind}</Chip> <span style={{ fontWeight: 500 }}>{it.title}</span>
+                    <Chip tone={ATTENTION_TONE[it.kind]}>{it.kind}</Chip> <span style={{ fontWeight: 500 }}>{it.title}</span>
                   </span>
                   <span className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>
                     {it.summary}
@@ -249,7 +266,7 @@ function NeedsYou({ d }: { d: ConsoleData }) {
                   <span className={w.overdue ? 'overdue' : 'muted'} style={{ fontSize: 12 }}>
                     {w.label}
                   </span>
-                  <span style={{ fontSize: 13, color: '#9D8FFF' }}>去看截图 →</span>
+                  <span style={{ fontSize: 13, color: TINTS.violet.base }}>去看截图 →</span>
                 </div>
               </Link>
             );
@@ -259,7 +276,9 @@ function NeedsYou({ d }: { d: ConsoleData }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, margin: '16px 0 0', fontSize: 12 }}>
         <span className="muted">
           {`在等你的 agent：${waiting.map(([a, m]) => `${a.name} ${m} 分钟`).join('，')}，今天合计 `}
-          <span style={{ color: '#F2C14E', fontWeight: 600 }}>{formatDuration(waitedTotal)}</span>
+          <span className="s-you" style={{ background: 'none', fontWeight: 600 }}>
+            {formatDuration(waitedTotal)}
+          </span>
           {' · '}
           <Link to={R.agents}>Agent 看板</Link>
         </span>
@@ -399,17 +418,51 @@ function Kpis({ d }: { d: ConsoleData }) {
   );
 }
 
+function greeting(now: ClockTime) {
+  const h = Math.floor(toMinutes(now) / 60);
+  return h < 5 ? '夜深了' : h < 11 ? '早上好' : h < 13 ? '中午好' : h < 18 ? '下午好' : '晚上好';
+}
+
+/** Weeks in a row, up to this week, with zero repeated errors. */
+function zeroRepeatWeeks(d: ConsoleData) {
+  const values = d.observation.coreMetrics.find((m) => m.id === 'repeats')?.values ?? [];
+  let n = 0;
+  while (n < values.length && values[values.length - 1 - n] === 0) n += 1;
+  return n;
+}
+
+function StreakTag({ weeks }: { weeks: number }) {
+  return (
+    <Link to={R.weekly} style={{ textDecoration: 'none' }}>
+      <span className="s-you" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 500, lineHeight: '22px', padding: '0 10px 0 8px', borderRadius: 999, border: '1px solid color-mix(in srgb, currentColor 35%, transparent)' }}>
+        <LineIcon name="Trophy" size={14} strokeWidth={2} />
+        {`连续 ${weeks} 周零重复错误`}
+      </span>
+    </Link>
+  );
+}
+
 export default function Overview() {
   const d = useData();
   const blocking = attentionIn(d, '阻塞任务').length;
   const needs = d.attention.filter((a) => a.group !== '抽检与复验').length;
   const ag = countAgents(d.agents);
+  const streak = zeroRepeatWeeks(d);
   return (
     <PageMain>
       <PageHeader
         icon="Main"
         title="全局总览"
-        sub={`${needs} 件事在等你，其中 ${blocking} 件正在阻塞任务 · ${ag.doing} 个 agent 在工作，${ag.you} 个在等你`}
+        sub={
+          <>
+            {`${greeting(d.workspace.now)}。${needs} 件事在等你，其中 ${blocking} 件正在阻塞任务 · ${ag.doing} 个 agent 在工作，${ag.you} 个在等你`}
+            {streak > 0 && (
+              <span style={{ display: 'block', marginTop: 10 }}>
+                <StreakTag weeks={streak} />
+              </span>
+            )}
+          </>
+        }
         right={<SegControl label="按项目筛选" options={['全部项目', ...d.projects.map((p) => p.short)]} />}
       />
       <NeedsYou d={d} />
