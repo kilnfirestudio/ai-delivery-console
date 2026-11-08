@@ -4,6 +4,8 @@
 
 技术栈：React 19 + TypeScript + Vite，路由用 react-router。
 
+参与开发的 agent 请先读 [AGENTS.md](AGENTS.md)。
+
 ```bash
 npm install
 npm run dev      # 本地开发

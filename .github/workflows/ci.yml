@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build-and-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (tsc + vite)
+        run: npm run build
+
+      # 不允许新增 !important（基线 20 处，F-01 清理后会降低）
+      - name: No new !important
+        run: |
+          BASELINE=20
+          COUNT=$(grep -rho '!important' src | wc -l)
+          echo "!important in src: $COUNT (baseline $BASELINE)"
+          if [ "$COUNT" -gt "$BASELINE" ]; then
+            echo "::error::新增了 !important，请改用 src/styles/design-system.css 里已有的 class 或 token"
+            exit 1
+          fi
