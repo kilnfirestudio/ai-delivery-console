@@ -12,7 +12,9 @@ import { GlassIcon, LineIcon, Robot, Sparkles, type IconName } from '../ui/icons
 import { ButtonLink, Chip, CountUp, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
 import { TINTS } from '../ui/tints';
 
-const STATE_COLOR = { done: '#3FB950', doing: '#4F8CFF', you: '#E3A008', queue: '#3A3D44' } as const;
+// 排队灰 #5C616B（画布 v20）：tints.ts 没有中性灰、src/ui 是 F-07 定稿不改，这一处单独命名，避免散落的内联十六进制。
+const QUEUE = '#5C616B';
+const STATE_COLOR = { done: TINTS.green.base, doing: TINTS.blue.base, you: TINTS.amber.base, queue: QUEUE } as const;
 
 
 /** Today at a glance; each card opens its page. */
@@ -31,10 +33,10 @@ function TodayRow({ d }: { d: ConsoleData }) {
   const waited = d.agents.reduce((s, a) => s + waitedToday(a, d.workspace.now), 0);
   const firstPass = d.observation.coreMetrics.find((m) => m.id === 'firstPass')!;
   const gw = d.observation.gatewayToday;
-  const pill = { doing: { bg: 'rgba(79,140,255,.26)', bd: '#4F8CFF', cls: 'pill-run' }, you: { bg: 'rgba(227,160,8,.25)', bd: '#E3A008', cls: undefined } } as const;
+  const pill = { doing: { bg: 'rgba(79,140,255,.26)', bd: TINTS.blue.base, cls: 'pill-run' }, you: { bg: 'rgba(227,160,8,.25)', bd: TINTS.amber.base, cls: 'breathe' } } as const;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.9fr 1.1fr 1fr', gap: 16 }}>
-      <Link to={R.breakdown} className="card today-card" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 20 }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+      <Link to={R.breakdown} className="card today-card" style={{ flex: '1.15 1 260px', position: 'relative', display: 'flex', alignItems: 'center', gap: 20 }}>
         <div>
           <Donut parts={parts} caption="子任务" />
         </div>
@@ -53,14 +55,14 @@ function TodayRow({ d }: { d: ConsoleData }) {
         </div>
         <CornerIcon name="Breakdown" />
       </Link>
-      <Link to={R.metrics} className="card today-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <Link to={R.metrics} className="card today-card" style={{ flex: '0.9 1 240px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
         <CornerIcon name="Metrics" />
         <span className="lbl" style={{ alignSelf: 'flex-start' }}>
           {`${firstPass.name} · 本周`}
         </span>
         <Gauge value={firstPass.values[firstPass.values.length - 1]} base={firstPass.base} label={firstPass.name} />
       </Link>
-      <Link to={R.agents} className="card today-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Link to={R.agents} className="card today-card" style={{ flex: '1.1 1 260px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <CornerIcon name="Agents" />
         <span className="lbl">{`Agent · ${d.agents.length}`}</span>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 18 }}>
@@ -93,7 +95,7 @@ function TodayRow({ d }: { d: ConsoleData }) {
           今天 agent 一共等你 <span style={{ color: '#F2C14E', fontWeight: 600 }}>{formatDuration(waited)}</span>
         </span>
       </Link>
-      <Link to={R.live} className="card today-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Link to={R.live} className="card today-card" style={{ flex: '1 1 260px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <CornerIcon name="Live" />
         <span className="lbl">网关 · 今天</span>
         <div className="stat">
@@ -103,7 +105,7 @@ function TodayRow({ d }: { d: ConsoleData }) {
           <span style={{ fontSize: 30 }}>{formatNumber(gw.calls)}</span>
         </div>
         <div title="近 60 分钟调用量">
-          <Spark values={gw.lastHour} width={220} height={46} color="#8E7CFF" />
+          <Spark values={gw.lastHour} width={220} height={46} color={TINTS.violet.base} />
         </div>
         <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
           <span className="muted">
@@ -299,10 +301,10 @@ function BreakdownMap({ d }: { d: ConsoleData }) {
       right={
         <Legend
           items={[
-            [{ background: '#3FB950' }, `完成 ${c.done}`],
-            [{ background: '#4F8CFF' }, `进行中 ${c.doing}`],
-            [{ background: '#E3A008' }, `等待你 ${c.you}`],
-            [{ background: 'transparent', border: '1px dashed #5C616B' }, `排队 ${c.queue}`],
+            [{ background: STATE_COLOR.done }, `完成 ${c.done}`],
+            [{ background: STATE_COLOR.doing }, `进行中 ${c.doing}`],
+            [{ background: STATE_COLOR.you }, `等待你 ${c.you}`],
+            [{ background: 'transparent', border: `1px dashed ${QUEUE}` }, `排队 ${c.queue}`],
           ]}
         />
       }
@@ -312,8 +314,8 @@ function BreakdownMap({ d }: { d: ConsoleData }) {
           const preqs = brokenDownRequirements(d, p.id);
           const subs = preqs.flatMap((r) => subtasksOf(d, r.id));
           return (
-            <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '240px minmax(0, 1fr)', gap: 16, alignItems: 'start', padding: '14px 0', borderTop: '1px solid rgba(255,255,255,.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6 }}>
+            <div key={p.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'start', padding: '14px 0', borderTop: '1px solid rgba(255,255,255,.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0)' }}>
+              <div style={{ flex: '0 0 240px', display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</span>
                   <Chip tone={p.line === '主线' ? 'doing' : 'queue'}>{p.line}</Chip>
@@ -322,7 +324,7 @@ function BreakdownMap({ d }: { d: ConsoleData }) {
                   {subs.length ? `子任务完成 ${countStates(subs).done} / ${subs.length}` : '没有进行中的需求'}
                 </span>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ flex: '1 1 300px', minWidth: 0, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {preqs.length ? (
                   preqs.map((r) => (
                     <div key={r.id} className="well" style={{ flex: '0 1 auto', minWidth: 220, display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 10, ...(subtasksOf(d, r.id).some((x) => x.state === 'you') ? { borderColor: 'rgba(227,160,8,.45)' } : {}) }}>
