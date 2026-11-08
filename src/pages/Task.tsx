@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { R } from '../app/routes';
 import { CHECKPOINTS, useData, type ConsoleData, type ConstraintLevel, type KnowledgeItem, type TaskDetail, type TaskEventType, type Tone } from '../data';
@@ -110,6 +110,17 @@ export default function Task() {
   const recommended = Math.max(0, t?.help?.options.findIndex((o) => o.recommended) ?? 0);
   const [choice, setChoice] = useState(recommended);
   const [decided, setDecided] = useState<number>();
+  const optionRefs = useRef<HTMLButtonElement[]>([]);
+  // WAI-ARIA radiogroup keys: ↑/← previous, ↓/→ next (wrapping), Home/End to the ends; moving also selects.
+  const onOptionKey = (e: KeyboardEvent<HTMLButtonElement>, i: number, count: number) => {
+    const map: Record<string, number> = { ArrowUp: i - 1, ArrowLeft: i - 1, ArrowDown: i + 1, ArrowRight: i + 1, Home: 0, End: count - 1 };
+    const target = map[e.key];
+    if (target === undefined) return;
+    e.preventDefault();
+    const next = (target + count) % count;
+    setChoice(next);
+    optionRefs.current[next]?.focus();
+  };
 
   return (
     <PageMain>
@@ -158,7 +169,18 @@ export default function Task() {
             <>
               <div role="radiogroup" aria-label="选择方案" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
                 {t.help.options.map((o, i) => (
-                  <button key={o.title} type="button" role="radio" aria-checked={choice === i} className="opt" onClick={() => setChoice(i)}>
+                  <button
+                    key={o.title}
+                    type="button"
+                    role="radio"
+                    aria-checked={choice === i}
+                    // Roving tabindex: only the checked option is in the tab order; arrow keys move within the group.
+                    tabIndex={choice === i ? 0 : -1}
+                    ref={(el) => { if (el) optionRefs.current[i] = el; }}
+                    className="opt"
+                    onClick={() => setChoice(i)}
+                    onKeyDown={(e) => onOptionKey(e, i, t.help!.options.length)}
+                  >
                     <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
                       <span style={{ fontSize: 14, fontWeight: 600 }}>{o.title}</span>
                       {o.recommended && <Chip tone="doing">推荐</Chip>}
