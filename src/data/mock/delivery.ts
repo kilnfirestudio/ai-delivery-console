@@ -179,36 +179,36 @@ export const attention: AttentionItem[] = [
   {
     id: 'AT-01', kind: '求助', group: '阻塞任务', title: 'T2 是否允许修改共用 CSS',
     detail: 'Black Friday 改版 · 开发 C 停在检查点 2', summary: '开发 C 停在检查点 2 · 会影响 3 个已验收区块',
-    since: '15:11', waitedMin: 69, route: '/task', refs: { requirement: 'TASK-0412', subtask: 'TASK-0412/T2' },
+    since: '15:11', waitedMin: 69, refs: { requirement: 'TASK-0412', subtask: 'TASK-0412/T2' },
   },
   {
     id: 'AT-02', kind: '冲突', group: '阻塞任务', title: '客户要求标题 36px，与 K-008 冲突',
     detail: '影响验收标准第 1 条 · 裁决规则分不出', summary: '裁决规则分不出先后 · 影响验收标准第 1 条',
-    since: '15:40', waitedMin: 40, route: '/review', refs: { requirement: 'TASK-0412', knowledge: 'K-008' },
+    since: '15:40', waitedMin: 40, refs: { requirement: 'TASK-0412', knowledge: 'K-008' },
     body: '客户要求标题 36px，领域规则 K-008 规定移动端标题不超过 28px。上位、特别、后法、可信度都分不出，已升级给你。',
   },
   {
     id: 'AT-03', kind: '候选', group: '需要你确认', title: '客户 A 移动端断点为 750px',
-    detail: '客户层 · 来自 T2', summary: '客户层 · 必须由你确认', since: '14:40', route: '/review', refs: { requirement: 'TASK-0412', subtask: 'TASK-0412/T2', candidate: 'C-0219' },
+    detail: '客户层 · 来自 T2', summary: '客户层 · 必须由你确认', since: '14:40', refs: { requirement: 'TASK-0412', subtask: 'TASK-0412/T2', candidate: 'C-0219' },
   },
   {
     id: 'AT-04', kind: '候选', group: '需要你确认', title: 'xuvia 选题接口单次最多 50 条',
-    detail: '项目层 · 高后果：影响批量生成', summary: '后果大：影响批量生成', since: '13:15', route: '/review', refs: { candidate: 'C-0220' },
+    detail: '项目层 · 高后果：影响批量生成', summary: '后果大：影响批量生成', since: '13:15', refs: { candidate: 'C-0220' },
   },
   {
     id: 'AT-05', kind: '上提', group: '需要你确认', title: 'K-027 上提到 Shopline 领域层',
-    detail: '已在 2 个客户主题验证', summary: '跨项目上提 · 建议先复查当下条件', since: '11:30', route: '/knowledge/item', refs: { knowledge: 'K-027' },
+    detail: '已在 2 个客户主题验证', summary: '跨项目上提 · 建议先复查当下条件', since: '11:30', refs: { knowledge: 'K-027' },
   },
   {
     id: 'AT-06', kind: '看截图', group: '看截图', title: 'P-0012 个人站案例页',
-    detail: '4 台设备 · 1 处意外差异', summary: '4 台设备 · 1 处意外差异', since: '15:45', waitedMin: 35, route: '/visual', refs: { subtask: 'P-REQ-03/P-0012' },
+    detail: '4 台设备 · 1 处意外差异', summary: '4 台设备 · 1 处意外差异', since: '15:45', waitedMin: 35, refs: { subtask: 'P-REQ-03/P-0012' },
   },
   {
     id: 'AT-07', kind: '抽检', group: '抽检与复验', title: '委托规则自动确认：个人站图片统一用 webp',
-    detail: '低风险自动确认后的随机抽检', summary: '低风险自动确认后的随机抽检', since: '10:05', route: '/review',
+    detail: '低风险自动确认后的随机抽检', summary: '低风险自动确认后的随机抽检', since: '10:05',
   },
   {
     id: 'AT-08', kind: '复验', group: '抽检与复验', title: 'K-061 Codex 需要显式写出文件清单',
-    detail: '模型升级后可能不再需要 · 建议做消融测试', summary: '模型升级后可能不再需要', since: '昨天', route: '/knowledge', refs: { knowledge: 'K-061' },
+    detail: '模型升级后可能不再需要 · 建议做消融测试', summary: '模型升级后可能不再需要', since: '昨天', refs: { knowledge: 'K-061' },
   },
 ];

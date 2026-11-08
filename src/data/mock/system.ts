@@ -76,8 +76,12 @@ export const distribution = {
   ] as { title: string; note: string; status: string; tone: Tone }[],
 };
 
+/** Minutes before an open help request counts as overdue (threshold "求助超时提醒"). */
+const HELP_TIMEOUT_MIN = 30;
+
 /** "决策规则": the five-layer decision policy and its current state. */
 export const rules = {
+  helpTimeoutMin: HELP_TIMEOUT_MIN,
   ideals: [
     { text: '红线零违反', evidence: '本月 0 次', met: true },
     { text: '你的注意力只花在后果大又拿不准的决策上', evidence: '本周交给你 5 件，都在右上象限或属于必须由你确认的类别', met: true },
@@ -123,7 +127,7 @@ export const rules = {
   },
   thresholds: [
     ['抽检比例', '10%', '10/27'], ['单条审核过快提醒', '30 秒', '10/06'], ['混入已知错误的候选', '每周 1 条', '10/06'],
-    ['可能过时的有效期', '90 天', '09/15'], ['零调用提醒', '30 天', '09/15'], ['求助超时提醒', '30 分钟', '10/20'], ['可信度升级', '至少 2 个独立场景验证', '09/15'],
+    ['可能过时的有效期', '90 天', '09/15'], ['零调用提醒', '30 天', '09/15'], ['求助超时提醒', `${HELP_TIMEOUT_MIN} 分钟`, '10/20'], ['可信度升级', '至少 2 个独立场景验证', '09/15'],
   ] as [string, string, string][],
   notifications: [
     { tier: '即时通知', when: '触及红线、阻塞任务的求助和冲突', channel: '桌面 + 手机', tone: 'you' },

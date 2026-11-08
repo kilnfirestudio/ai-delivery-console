@@ -84,5 +84,36 @@ export const countAgents = (list: Agent[]) => {
 
 export const attentionIn = (d: ConsoleData, group: AttentionItem['group']) => d.attention.filter((a) => a.group === group);
 
+/** Where to act on an item: the exact task, knowledge item or review entry. */
+export const attentionHref = (a: AttentionItem) => {
+  if (a.kind === '求助' && a.refs?.subtask) return taskHref(a.refs.subtask);
+  if (a.kind === '看截图') return '/visual';
+  if (a.kind === '上提' && a.refs?.knowledge) return knowledgeHref(a.refs.knowledge);
+  return `/review?item=${a.id}`;
+};
+
+export const taskHref = (key: string) => `/task?id=${encodeURIComponent(key)}`;
+export const requirementHref = (id: string) => `/breakdown?id=${encodeURIComponent(id)}`;
+export const knowledgeHref = (id: string) => `/knowledge/item?id=${encodeURIComponent(id)}`;
+
+/** Wait against the help-timeout threshold: amber while within it, red once overdue. */
+export const waitState = (d: ConsoleData, minutes = 0) => {
+  const over = minutes - d.rules.helpTimeoutMin;
+  return { overdue: over > 0, over, label: over > 0 ? `已等 ${minutes} 分钟 · 超时 ${over} 分钟` : `已等 ${minutes} 分钟` };
+};
+
+/** Attention items in the order you should handle them. */
+export const attentionOrder = (d: ConsoleData) => {
+  const groups: AttentionItem['group'][] = ['阻塞任务', '需要你确认', '看截图', '抽检与复验'];
+  return groups.flatMap((g) => d.attention.filter((a) => a.group === g));
+};
+
+/** The item after `id` in handling order, wrapping to the first. */
+export const nextAttention = (d: ConsoleData, id?: string) => {
+  const list = attentionOrder(d);
+  const i = list.findIndex((a) => a.id === id);
+  return list[(i + 1) % list.length];
+};
+
 /** Items in the 待审 queue (screenshots have their own page). */
 export const reviewQueue = (d: ConsoleData) => d.attention.filter((a) => a.group !== '看截图');

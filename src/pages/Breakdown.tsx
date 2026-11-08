@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { R } from '../app/routes';
 import { CHECKPOINTS, CHECKPOINT_EVIDENCE, DELIVERY_STEPS, useData, type Subtask } from '../data';
-import { agentById, nextCheckpoint, SUBTASK_STATE_LABEL, subtasksOf } from '../data/selectors';
+import { agentById, attentionHref, nextCheckpoint, SUBTASK_STATE_LABEL, subtaskKey, subtasksOf, taskHref } from '../data/selectors';
 import { CheckpointBar, Chip, PageHeader, PageMain } from '../ui/primitives';
 
 const COLS = '56px minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr) 70px 96px 170px';
@@ -31,7 +31,7 @@ export default function Breakdown() {
   const agentName = (s: Subtask) => agentById(d, s.agentId)?.name ?? '未分配';
 
   const node = (s: Subtask, meta: string, style?: CSSProperties) => (
-    <Link key={s.id} className="node" to={R.task} style={style}>
+    <Link key={s.id} className="node" to={taskHref(subtaskKey(s))} style={style}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
         <span className="mono">{s.id}</span>
         <Chip tone={s.state}>{SUBTASK_STATE_LABEL[s.state]}</Chip>
@@ -71,8 +71,8 @@ export default function Breakdown() {
               {DELIVERY_STEPS.map((label, i) => {
                 const done = i < req.step - 1;
                 const cur = i === req.step - 1;
-                const box: CSSProperties = cur ? { background: 'rgba(124,108,255,.10)', border: '1px solid rgba(124,108,255,.5)' } : done ? { background: 'rgba(63,185,80,.06)', border: '1px solid rgba(63,185,80,.3)' } : {};
-                const dot: CSSProperties = done ? { background: '#039855', color: '#FFFFFF' } : cur ? { background: '#6E5CF6', color: '#FFFFFF' } : { background: 'rgba(255,255,255,.08)', color: '#A1A6B0' };
+                const box: CSSProperties = cur ? { background: 'rgba(79,140,255,.10)', border: '1px solid rgba(79,140,255,.5)' } : done ? { background: 'rgba(63,185,80,.06)', border: '1px solid rgba(63,185,80,.3)' } : {};
+                const dot: CSSProperties = done ? { background: '#039855', color: '#FFFFFF' } : cur ? { background: '#4F8CFF', color: '#FFFFFF' } : { background: 'rgba(255,255,255,.08)', color: '#A1A6B0' };
                 return (
                   <li key={label} className={done || cur ? undefined : 'well'} style={{ borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 6, ...box }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -118,7 +118,7 @@ export default function Breakdown() {
               <p className="colh">第二步 · 并行</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {parallel.map((s) => (
-                  <Link key={s.id} className="node" to={R.task} style={{ borderColor: s.state === 'you' ? 'rgba(227,160,8,.45)' : 'rgba(255,255,255,.08)' }}>
+                  <Link key={s.id} className="node" to={taskHref(subtaskKey(s))} style={{ borderColor: s.state === 'you' ? 'rgba(227,160,8,.45)' : 'rgba(255,255,255,.08)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                       <span className="mono">{s.id}</span>
                       <Chip tone={s.state}>{SUBTASK_STATE_LABEL[s.state]}</Chip>
@@ -172,7 +172,7 @@ export default function Breakdown() {
               return (
                 <div key={s.id} role="row" className="tr" style={{ display: 'grid', gridTemplateColumns: COLS }}>
                   <div role="cell" className="td mono">
-                    {s.id}
+                    <Link to={taskHref(subtaskKey(s))}>{s.id}</Link>
                   </div>
                   <div role="cell" className="td" style={{ fontWeight: 500 }}>
                     {s.title}
@@ -276,7 +276,7 @@ export default function Breakdown() {
               <div key={c.id} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 10, background: 'rgba(248,81,73,.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#FF7B72' }}>冲突待你裁决</span>
                 <span style={{ fontSize: 13, lineHeight: 1.5 }}>{c.body}</span>
-                <Link className="btn" to={c.route} style={{ alignSelf: 'flex-start' }}>
+                <Link className="btn" to={attentionHref(c)} style={{ alignSelf: 'flex-start' }}>
                   去裁决
                 </Link>
               </div>

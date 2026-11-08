@@ -1,0 +1,192 @@
+{
+  "canvas": {
+    "title": "AI 交付全局控制台",
+    "url": "https://claude.ai/artifact/XtxLwATyouN2PguggKG5YC",
+    "version": 20,
+    "versionId": "1794114388-080d",
+    "frozenAt": "2026-11-08"
+  },
+  "shared": {
+    "note": "All boards share the same <helmet><style>; it maps to these files.",
+    "code": [
+      "src/styles/design-system.css",
+      "src/ui/",
+      "src/index.css"
+    ]
+  },
+  "boards": [
+    {
+      "board": "Main.dc.html",
+      "title": "全局总览",
+      "route": "/",
+      "code": [
+        "src/pages/Overview.tsx"
+      ],
+      "sha256": "71842502d2bae26de4ea9f41eee418944accdd74f98d981664b0cba6a5ed77c4"
+    },
+    {
+      "board": "Review.dc.html",
+      "title": "待审",
+      "route": "/review",
+      "code": [
+        "src/pages/Review.tsx"
+      ],
+      "sha256": "ef221d3fbbac8d41b63222edf51d2b38400da15b361208e7ab36549c821d21ba"
+    },
+    {
+      "board": "Visual.dc.html",
+      "title": "截图审核",
+      "route": "/visual",
+      "code": [
+        "src/pages/Visual.tsx"
+      ],
+      "sha256": "a48d7ee873a24dc5f7bee1ccfeacfe0fa02fe2900773706fdad76901d38f4850"
+    },
+    {
+      "board": "Weekly.dc.html",
+      "title": "每周复盘",
+      "route": "/weekly",
+      "code": [
+        "src/pages/Weekly.tsx"
+      ],
+      "sha256": "1f5adc04ee187abd5d344f9fba8ecceff7bb249c14029e249d2fa2422a3ac75b"
+    },
+    {
+      "board": "Intake.dc.html",
+      "title": "登记需求",
+      "route": "/intake",
+      "code": [
+        "src/pages/Intake.tsx"
+      ],
+      "sha256": "da099ba21b8b38ebf8118d4327ea9b36b8c623e93f0ffbcbe88166d6a16a1e96"
+    },
+    {
+      "board": "Breakdown.dc.html",
+      "title": "需求拆解",
+      "route": "/breakdown",
+      "code": [
+        "src/pages/Breakdown.tsx"
+      ],
+      "sha256": "554b6d32beb14f465de1b5e59126b55057f74e76f94cd2e8d3c16c5cf2e39bf7"
+    },
+    {
+      "board": "Agents.dc.html",
+      "title": "Agent 看板",
+      "route": "/agents",
+      "code": [
+        "src/pages/Agents.tsx"
+      ],
+      "sha256": "786d8ff6cd313fb0f910aa66808ec200feab4dad3a0bbf9688d99d83b4069863"
+    },
+    {
+      "board": "Task.dc.html",
+      "title": "单任务追踪",
+      "route": "/task",
+      "code": [
+        "src/pages/Task.tsx"
+      ],
+      "sha256": "59dfbe57828c1b82ac55e21e1fb3484a9585aeeeea4a41fae5f70a20c707cd90"
+    },
+    {
+      "board": "Knowledge.dc.html",
+      "title": "知识库",
+      "route": "/knowledge",
+      "code": [
+        "src/pages/Knowledge.tsx"
+      ],
+      "sha256": "2f3cbd7d3b5612455b3d95d8b740a8a0e44df49ba3227d34e951091911b48a54"
+    },
+    {
+      "board": "KnowledgeItem.dc.html",
+      "title": "单条知识",
+      "route": "/knowledge/item",
+      "code": [
+        "src/pages/KnowledgeItem.tsx"
+      ],
+      "sha256": "37e696da4e15c364f39dceedd5b0be52adfa24e9bcc0e7eaa3752bf201a7655a"
+    },
+    {
+      "board": "Graph.dc.html",
+      "title": "知识图谱",
+      "route": "/graph",
+      "code": [
+        "src/pages/Graph.tsx",
+        "src/pages/graph/ForceGraph.tsx",
+        "src/pages/graph/model.ts"
+      ],
+      "sha256": "ed405bbb0edbf723f02c47b197fc48a84544b242db805a510c4f287074fdb006"
+    },
+    {
+      "board": "Clients.dc.html",
+      "title": "客户",
+      "route": "/clients",
+      "code": [
+        "src/pages/Clients.tsx"
+      ],
+      "sha256": "d5fb5c031db08a07d3fea683858b574fb5d9321d5bb72a3aa19d94a55128e1b1"
+    },
+    {
+      "board": "Metrics.dc.html",
+      "title": "指标",
+      "route": "/metrics",
+      "code": [
+        "src/pages/Metrics.tsx"
+      ],
+      "sha256": "4bf69a283dd20694767abdb9f471192824689f9d591b4c3215942d17e2cb527d"
+    },
+    {
+      "board": "Live.dc.html",
+      "title": "实时调用",
+      "route": "/live",
+      "code": [
+        "src/pages/Live.tsx"
+      ],
+      "sha256": "8b6c780e05ffdf94b2d8aed4d106f09adf4c5dcc16673264060ef84cb9d1f4f8"
+    },
+    {
+      "board": "Pipeline.dc.html",
+      "title": "采集与处理",
+      "route": "/pipeline",
+      "code": [
+        "src/pages/Pipeline.tsx"
+      ],
+      "sha256": "9d5a2d75bb5eba2d762adb71548c7cafafc88ef4f3c6478f6d03d15fe75ceaf2"
+    },
+    {
+      "board": "Distribution.dc.html",
+      "title": "分发",
+      "route": "/distribution",
+      "code": [
+        "src/pages/Distribution.tsx"
+      ],
+      "sha256": "9958fbcdf65d34498bdd84c0c5ef8729d996287a1967e58e3e6b7564fd8f8aa9"
+    },
+    {
+      "board": "Rules.dc.html",
+      "title": "决策规则",
+      "route": "/rules",
+      "code": [
+        "src/pages/Rules.tsx"
+      ],
+      "sha256": "3d9ad797802e22c294d9bbc26f71b65437dc908c195f00087a5ec59d475ee9b7"
+    },
+    {
+      "board": "System.dc.html",
+      "title": "系统健康",
+      "route": "/system",
+      "code": [
+        "src/pages/System.tsx"
+      ],
+      "sha256": "269d6144e5261851b59587c401eef248d1923f2b10c3e3939f5843797e8fb897"
+    },
+    {
+      "board": "Components.dc.html",
+      "title": "组件规范",
+      "route": "/spec",
+      "code": [
+        "src/pages/Spec.tsx"
+      ],
+      "sha256": "1e497ea36fe28177754fd23ec4c32f2200408b1d1fedef7fbc6a8c1cc1a980f1"
+    }
+  ]
+}

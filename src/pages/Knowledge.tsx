@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { R } from '../app/routes';
 import { useData, type Credibility, type KnowledgeItem } from '../data';
+import { knowledgeHref } from '../data/selectors';
 import { PageHeader, PageMain, Chip } from '../ui/primitives';
 
 const CRED_COLOR: Record<Credibility, string> = { 已验证: '#B4A9FF', 初步验证: '#7C6CFF', 假设: '#4A4560' };
@@ -172,7 +173,7 @@ export default function Knowledge() {
             </div>
             {heat.map((k) => (
               <div key={k.id} role="row" style={{ display: 'grid', gridTemplateColumns: '340px repeat(8, 1fr) 72px', gap: 2, alignItems: 'center' }}>
-                <Link role="rowheader" to={R.knowledgeItem} style={{ fontSize: 13, color: '#EDEEF0', textDecoration: 'none', padding: '6px 8px 6px 0', lineHeight: 1.4 }}>
+                <Link role="rowheader" to={knowledgeHref(k.id)} style={{ fontSize: 13, color: '#EDEEF0', textDecoration: 'none', padding: '6px 8px 6px 0', lineHeight: 1.4 }}>
                   <span className="mono" style={{ color: '#A1A6B0' }}>
                     {k.id}
                   </span>{' '}
@@ -209,10 +210,10 @@ export default function Knowledge() {
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
                 {s.items.map((it) => (
                   <li key={it.id} style={{ padding: '8px 0', borderTop: '1px solid rgba(255,255,255,.05)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: 13 }}>
+                    <Link to={knowledgeHref(it.id)} style={{ fontSize: 13, color: '#EDEEF0', textDecoration: 'none' }}>
                       <span className="mono">{it.id}</span>
                       {` · ${it.text ?? text(it.id)}`}
-                    </span>
+                    </Link>
                     <span className="muted" style={{ fontSize: 12 }}>
                       {it.meta}
                     </span>

@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
-import { R } from '../app/routes';
 import { useData, type Agent, type ConsoleData } from '../data';
-import { AGENT_ROBOT, AGENT_STATUS_LABEL, AGENT_STATUS_TONE, agentNow, countAgents, findSubtask, nextCheckpoint } from '../data/selectors';
+import { AGENT_ROBOT, AGENT_STATUS_LABEL, AGENT_STATUS_TONE, agentNow, countAgents, findSubtask, nextCheckpoint, taskHref } from '../data/selectors';
 import { AgentTimeline, TIMELINE_LEGEND } from '../ui/charts';
 import { Robot } from '../ui/icons';
 import { CheckpointBar, Chip, Label, PageHeader, PageMain, Section } from '../ui/primitives';
@@ -27,7 +26,7 @@ function ActiveCard({ d, a }: { d: ConsoleData; a: Agent }) {
   const you = a.status === 'you';
   const project = d.projects.find((p) => p.id === d.requirements.find((r) => r.id === s.requirementId)?.projectId);
   return (
-    <Link className="tc" to={R.task} style={you ? { borderColor: 'rgba(227,160,8,.45)', background: 'rgba(227,160,8,.06)' } : undefined}>
+    <Link className="tc" to={taskHref(a.activeSubtask!)} style={you ? { borderColor: 'rgba(227,160,8,.45)', background: 'rgba(227,160,8,.06)' } : undefined}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
         <span className="mono">{s.id}</span>
         <span className="muted" style={{ fontSize: 12 }}>
