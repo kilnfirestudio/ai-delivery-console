@@ -1,17 +1,20 @@
-import { Fragment } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { useData } from '../data';
-import { Chip, Col, Grid, List, Note, PageHeader, PageMain, Row, Section, SegControl } from '../ui/primitives';
+import { Chip, Col, Grid, List, Note, PageHeader, PageMain, Row, Section } from '../ui/primitives';
 
-function StepsBar({ names, current }: { names: string[]; current: number }) {
+function StepsBar({ names, current, onStep }: { names: string[]; current: number; onStep: (i: number) => void }) {
   return (
     <ol aria-label="步骤" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
       {names.map((n, i) => {
-        const [dot, col] = i < current ? [{ background: '#039855', color: '#FFFFFF' }, '#EDEEF0'] : i === current ? [{ background: '#6E5CF6', color: '#FFFFFF' }, '#8DB6FF'] : [{ background: 'rgba(255,255,255,.08)', color: '#A1A6B0' }, '#A1A6B0'];
+        const now = i === current;
+        const [dot, col] = i < current ? [{ background: '#039855', color: '#FFFFFF' }, '#EDEEF0'] : now ? [{ background: '#6E5CF6', color: '#FFFFFF' }, '#8DB6FF'] : [{ background: 'rgba(255,255,255,.08)', color: '#A1A6B0' }, '#A1A6B0'];
         return (
           <Fragment key={n}>
-            <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 24, height: 24, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, ...dot }}>{i + 1}</span>
-              <span style={{ fontSize: 14, fontWeight: 500, color: col }}>{n}</span>
+            <li style={{ display: 'flex', alignItems: 'center' }}>
+              <button type="button" onClick={() => onStep(i)} aria-current={now ? 'step' : undefined} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0, border: 0, background: 'none', cursor: 'pointer', font: 'inherit' }}>
+                <span style={{ width: 24, height: 24, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, ...dot }}>{i + 1}</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: col }}>{n}</span>
+              </button>
             </li>
             {i < names.length - 1 && <li aria-hidden="true" style={{ flex: '0 0 40px', height: 1, background: 'rgba(255,255,255,.14)' }} />}
           </Fragment>
@@ -40,6 +43,8 @@ function ShotThumb({ name }: { name: string }) {
 
 const h3 = (text: string, mb = 8) => <h3 style={{ margin: `0 0 ${mb}px`, fontSize: 15, fontWeight: 600 }}>{text}</h3>;
 
+const SOURCES = ['微信', '邮件', '会议记录', '其他'];
+
 export default function Intake() {
   const d = useData();
   const rec = d.intakeRecords[0];
@@ -48,12 +53,32 @@ export default function Intake() {
   const client = d.clients.find((c) => c.id === req.clientId);
   const kn = (id: string) => d.knowledge.find((k) => k.id === id)!;
 
+  const [step, setStep] = useState(0);
+  const [projectId, setProjectId] = useState(project.id);
+  const [clientId, setClientId] = useState(client?.id);
+  const [source, setSource] = useState(Math.max(0, SOURCES.indexOf(rec.source)));
+  const [raw, setRaw] = useState(rec.rawText);
+  const [expected, setExpected] = useState(rec.expected);
+  const [tried, setTried] = useState(false);
+  const rawRef = useRef<HTMLTextAreaElement>(null);
+
+  const sel = d.clients.find((c) => c.id === clientId) ?? client;
+  const rawEmpty = raw.trim() === '';
+  const register = (toDraft: boolean) => {
+    if (rawEmpty) {
+      setTried(true);
+      rawRef.current?.focus();
+      return;
+    }
+    setStep(toDraft ? 1 : 0);
+  };
+
   const form = (
-    <form style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <form style={{ display: 'flex', flexDirection: 'column', gap: 16 }} onSubmit={(e) => e.preventDefault()}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div className="field">
           <label htmlFor="pj">项目</label>
-          <select id="pj" className="inp" defaultValue={project.id}>
+          <select id="pj" className="inp" value={projectId} onChange={(e) => setProjectId(e.target.value as typeof projectId)}>
             {d.projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -63,9 +88,9 @@ export default function Intake() {
         </div>
         <div className="field">
           <label htmlFor="cl">客户</label>
-          <select id="cl" className="inp" defaultValue={client?.id}>
+          <select id="cl" className="inp" value={clientId ?? ''} onChange={(e) => setClientId((e.target.value || undefined) as typeof clientId)}>
             {d.clients
-              .filter((c) => c.projectId === project.id)
+              .filter((c) => c.projectId === projectId)
               .map((c) => (
                 <option key={c.id} value={c.id}>
                   {`${c.name} · ${c.alias.replace(/^某/, '')}`}
@@ -76,7 +101,13 @@ export default function Intake() {
       </div>
       <div className="field">
         <span style={{ fontSize: 13, fontWeight: 600 }}>来源</span>
-        <SegControl label="来源" options={['微信', '邮件', '会议记录', '其他']} pressed={['微信', '邮件', '会议记录', '其他'].indexOf(rec.source)} />
+        <div className="seg" role="group" aria-label="来源">
+          {SOURCES.map((o, i) => (
+            <button key={o} type="button" aria-pressed={i === source} onClick={() => setSource(i)}>
+              {o}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="field">
         <label htmlFor="raw">
@@ -85,7 +116,12 @@ export default function Intake() {
             原样粘贴，不要改写
           </span>
         </label>
-        <textarea id="raw" className="inp" rows={6} style={{ resize: 'vertical', lineHeight: 1.6 }} defaultValue={rec.rawText} />
+        <textarea id="raw" ref={rawRef} className="inp" rows={6} style={{ resize: 'vertical', lineHeight: 1.6 }} value={raw} onChange={(e) => setRaw(e.target.value)} aria-invalid={tried && rawEmpty} aria-describedby={tried && rawEmpty ? 'raw-err' : undefined} />
+        {tried && rawEmpty && (
+          <span id="raw-err" role="alert" className="overdue" style={{ fontSize: 12, lineHeight: 1.5 }}>
+            请先粘贴客户原话，这是登记的证据
+          </span>
+        )}
       </div>
       <div className="field">
         <span style={{ fontSize: 13, fontWeight: 600 }}>截图与附件</span>
@@ -103,21 +139,21 @@ export default function Intake() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div className="field">
           <label htmlFor="dl">期望上线</label>
-          <input id="dl" className="inp" defaultValue={rec.expected} />
+          <input id="dl" className="inp" value={expected} onChange={(e) => setExpected(e.target.value)} />
         </div>
         <div className="field">
           <span style={{ fontSize: 13, fontWeight: 600 }}>可见范围</span>
-          <div className="inp" style={{ display: 'flex', alignItems: 'center', color: '#A1A6B0' }}>
-            {client ? `只限${client.name}（自动）` : '内部'}
+          <div className="inp muted" style={{ display: 'flex', alignItems: 'center' }}>
+            {sel ? `只限${sel.name}（自动）` : '内部'}
           </div>
         </div>
       </div>
-      <Note>{`原话和截图会作为证据原样保存，${client ? `按${client.name}加密，` : ''}只追加不修改。登记后生成任务编号。`}</Note>
+      <Note>{`原话和截图会作为证据原样保存，${sel ? `按${sel.name}加密，` : ''}只追加不修改。登记后生成任务编号。`}</Note>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        <button className="btn btn-p" type="button">
+        <button className="btn btn-p" type="button" onClick={() => register(true)}>
           登记并起草确认单
         </button>
-        <button className="btn" type="button">
+        <button className="btn" type="button" onClick={() => register(false)}>
           只登记
         </button>
       </div>
@@ -181,7 +217,7 @@ export default function Intake() {
         <button className="btn" type="button">
           生成客户共享链接
         </button>
-        <button className="btn" type="button">
+        <button className="btn" type="button" onClick={() => setStep(0)}>
           修改
         </button>
       </div>
@@ -193,7 +229,12 @@ export default function Intake() {
 
   return (
     <PageMain>
-      <PageHeader title="登记需求" icon="Intake" sub={`把客户原话交给系统，拆分要等客户确认需求单之后。示例是 ${req.registeredAt} 登记 ${req.id} 时的样子`} right={<StepsBar names={['登记', '确认', '拆分']} current={0} />} />
+      <PageHeader
+        title="登记需求"
+        icon="Intake"
+        sub={`把客户原话交给系统，拆分要等客户确认需求单之后。示例是 ${req.registeredAt} 登记 ${req.id} 时的样子`}
+        right={<StepsBar names={['登记', '确认', '拆分']} current={step} onStep={(i) => (i <= step || !rawEmpty ? setStep(i) : (setTried(true), rawRef.current?.focus()))} />}
+      />
       <Row>
         <Col flex="1 1 420px">
           <Section id="in-h" title="1 · 客户原话" sub="一次提交同时生成任务和证据">
