@@ -25,7 +25,7 @@ npm run build    # tsc -b 类型检查 + vite 打包
 - `design/manifest.json` 写了每个画板对应的路由和代码文件；`design/canvas/*.dc.html` 是画板原文件，可以直接在浏览器打开对照。
 - 不要求像素级一致，可以为了组件统一做小幅调整，但要在 PR 里说明。
 - 所有画板共用一套样式，对应 `src/styles/design-system.css`、`src/ui/`、`src/index.css`。
-- **不要修改 `design/` 目录**。快照只由每日设计同步更新。
+- **不要修改 `design/` 目录**。快照只在所有者确认设计变更后，由单独的设计同步 PR 更新。
 
 ## 任务怎么领
 
