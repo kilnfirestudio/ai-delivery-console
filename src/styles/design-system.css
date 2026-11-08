@@ -91,10 +91,19 @@ select.inp option{background:#16171A}
 textarea,input,select{color-scheme:dark}
 textarea:not(.inp){background:#0C0D0F;color:#EDEEF0;border-color:rgba(255,255,255,.09) !important}
 textarea:not(.inp):focus{outline:none;border-color:#7C6CFF !important;box-shadow:0 0 0 3px rgba(124,108,255,.25)}
-.gt{display:inline-flex;align-items:center;justify-content:center;flex:none;position:relative;box-sizing:border-box;border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.20),inset 0 -10px 18px rgba(0,0,0,.25),0 12px 26px -12px var(--gt-glow),0 2px 6px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.gt::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(120% 90% at 18% 0%,rgba(255,255,255,.22),transparent 55%);pointer-events:none}
-.gt svg{position:relative;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
-.gt-violet{background:linear-gradient(150deg,#8E7CFF66 0%,#8E7CFF1A 70%);--gt-glow:#8E7CFF73}.gt-blue{background:linear-gradient(150deg,#4F8CFF66 0%,#4F8CFF1A 70%);--gt-glow:#4F8CFF73}.gt-cyan{background:linear-gradient(150deg,#38BDF866 0%,#38BDF81A 70%);--gt-glow:#38BDF873}.gt-green{background:linear-gradient(150deg,#3FB95066 0%,#3FB9501A 70%);--gt-glow:#3FB95073}.gt-amber{background:linear-gradient(150deg,#E3A00866 0%,#E3A0081A 70%);--gt-glow:#E3A00873}.gt-rose{background:linear-gradient(150deg,#F8514966 0%,#F851491A 70%);--gt-glow:#F8514973}
+.gt{display:inline-flex;align-items:center;justify-content:center;flex:none;position:relative;box-sizing:border-box;border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -6px 12px rgba(0,0,0,.14),0 6px 14px -8px var(--gt-glow),0 1px 3px rgba(0,0,0,.35)}
+.gt::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,0) 52%);pointer-events:none}
+.gt svg{position:relative;filter:drop-shadow(0 1px 1px rgba(0,0,0,.28))}
+.gt-violet{background:linear-gradient(150deg,#9D90F5 0%,#6A5AD8 100%);--gt-glow:#6A5AD855}.gt-blue{background:linear-gradient(150deg,#7FA7EC 0%,#4170C8 100%);--gt-glow:#4170C855}.gt-cyan{background:linear-gradient(150deg,#6EC4DC 0%,#2B88AA 100%);--gt-glow:#2B88AA55}.gt-green{background:linear-gradient(150deg,#6EC48C 0%,#2F8A52 100%);--gt-glow:#2F8A5255}.gt-amber{background:linear-gradient(150deg,#ECC066 0%,#BF8516 100%);--gt-glow:#BF851655}.gt-rose{background:linear-gradient(150deg,#EE8A82 0%,#C4483F 100%);--gt-glow:#C4483F55}.gt-teal{background:linear-gradient(150deg,#63C7B6 0%,#23897A 100%);--gt-glow:#23897A55}.gt-indigo{background:linear-gradient(150deg,#8D9CF2 0%,#4B58C8 100%);--gt-glow:#4B58C855}
+/* 成就徽章：进入时 .gt 上扫过一道高光（闪一下），卡片从下方浮入，之后保持不动。 */
+.badge-pop{animation:badgein 600ms var(--ease) both}
+.badge-pop:nth-child(2){animation-delay:90ms}.badge-pop:nth-child(3){animation-delay:180ms}.badge-pop:nth-child(4){animation-delay:270ms}
+@keyframes badgein{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+.badge-pop .gt{overflow:hidden}.badge-pop .gt::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:shine 1.1s var(--ease) .5s 1 both}
+@keyframes shine{to{transform:translateX(120%)}}
+/* 连续记录小标签：静态，点击进每周复盘。 */
+.streak{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;line-height:22px;padding:0 10px 0 8px;border-radius:999px;background:rgba(227,160,8,.10);border:1px solid rgba(227,160,8,.35);color:#F2C14E;text-decoration:none}
+.streak:hover{background:rgba(227,160,8,.16);color:#F2C14E}
 .float{animation:float 4s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 .glyph-swing{transform-origin:50% 15%;animation:swing 2.4s ease-in-out infinite}
@@ -161,8 +170,16 @@ main > *:nth-child(2){animation-delay:60ms}main > *:nth-child(3){animation-delay
 .cu-loop::after{content:counter(n)}
 @keyframes countloop{0%{--n:0}55%,100%{--n:var(--to)}}
 @keyframes antp{0%,100%{opacity:1}50%{opacity:.35}}
-@media (prefers-reduced-motion: reduce){main > *,.fill,.cp5 > span,.heat,.vbars > span,.vbars div > span:last-child,.float,.glyph-swing,.scan,.pkt,.radar .sweep,.typing i{animation:none !important}.card:hover,.raised:hover,.tc:hover,.node:hover{transform:none}}
-.nudge{animation:nudge 1.4s ease-in-out infinite}@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}@media (prefers-reduced-motion: reduce){.nudge{animation:none}}/* Motion budget: looping motion is reserved for what needs you (tier1, blocking chips, waiting tiles). */
+.nudge{animation:nudge 1.4s ease-in-out infinite}@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+/* Motion budget: looping motion is reserved for what needs you (tier1, blocking chips, waiting tiles).
+   减少动态效果：停掉全部循环动画（入场动画也一并静止）。状态仍由静态颜色/阴影表达，不靠动画，所以不丢信息。
+   SMIL 动画（机器人、雷达光点、星光、流动包）在 ui/icons.tsx 里按同一偏好单独关闭，CSS @media 管不到它们。 */
+@media (prefers-reduced-motion: reduce){
+  main > *,.fill,.cp5 > span,.heat,.vbars > span,.vbars div > span:last-child,.vbars > .lastbar,.float,.glyph-swing,.scan,.pkt,.radar .sweep,.typing i,.nudge,
+  .tier1,.tile-you,.live::before,.shim,.nowline,.ants,.diffp,.relay,.breathe,.cu-loop,.pill-run::after,.flash td,.badge-pop,.badge-pop .gt::after{animation:none !important}
+  .card:hover,.raised:hover,.tc:hover,.node:hover,.tile:hover{transform:none}
+  .card:hover .gt,a:hover .gt{transform:none}
+}
 .overdue{color:#FF7B72 !important}
 .opt[aria-checked="true"]{border-color:#4F8CFF;box-shadow:0 0 0 1px #4F8CFF;background:rgba(79,140,255,.06)}
 .opt{cursor:pointer;text-align:left;font:inherit;color:inherit}
