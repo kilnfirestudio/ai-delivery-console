@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>单任务追踪</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Inter:wght@400;500;600&amp;family=Noto+Sans+SC:wght@400;500;600&amp;display=swap">
+<style>
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+body{margin:0;font-variant-numeric:tabular-nums;background:#08090A;-webkit-font-smoothing:antialiased}
+a{color:#B4A9FF;text-decoration-color:rgba(180,169,255,.35);text-underline-offset:3px}a:hover{color:#D6D0FF}
+.base{color:#EDEEF0;background-color:#08090A;background-image:radial-gradient(900px 420px at 16% -10%,rgba(124,108,255,.22),transparent 62%),radial-gradient(760px 360px at 90% -14%,rgba(79,140,255,.14),transparent 60%)}
+h1{letter-spacing:-.02em;color:#F5F6F7}
+section h2{letter-spacing:-.01em}
+.card{background:#101113;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 1px 2px rgba(0,0,0,.45)}
+.tier1{border-radius:16px;padding:24px;box-sizing:border-box;border:1px solid transparent;background:linear-gradient(180deg,#17150F 0%,#121214 46%) padding-box,conic-gradient(from var(--a),rgba(242,193,78,.75),rgba(124,108,255,.55),rgba(242,193,78,.08) 55%,rgba(242,193,78,.75)) border-box;box-shadow:0 24px 60px -28px rgba(227,160,8,.35);animation:border-spin 7s linear infinite}
+@keyframes border-spin{to{--a:360deg}}
+.quiet{border-top:1px solid rgba(255,255,255,.06);padding-top:20px}
+.well,[style*="background: #F9FAFB"]{background:#0C0D0F !important;border:1px solid rgba(255,255,255,.05) !important;box-shadow:none !important}
+.raised{background:#16171A;border:1px solid rgba(255,255,255,.07);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.paper{background-color:#111215;background-image:linear-gradient(90deg,#7C6CFF,#4F8CFF);background-size:100% 2px;background-repeat:no-repeat;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:24px;box-sizing:border-box;overflow:hidden}
+.screen{background:#0C0D0F;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:18px 20px;color:#EDEEF0}
+.glass{background:rgba(22,23,26,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.10);border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,.5)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;line-height:20px;padding:0 9px 0 8px;border-radius:999px;white-space:nowrap;background:rgba(255,255,255,.06);color:#A1A6B0}
+.chip::before{content:"";flex:none;width:6px;height:6px;border-radius:3px;background:#6B7079}
+.s-done{background:rgba(63,185,80,.12);color:#56D364}.s-done::before{background:#3FB950}
+.s-doing{background:rgba(79,140,255,.13);color:#8DB6FF}.s-doing::before{background:#4F8CFF}
+.s-you{background:rgba(227,160,8,.13);color:#F2C14E}.s-you::before{background:#E3A008}
+.s-queue{background:rgba(255,255,255,.06);color:#A1A6B0}
+.s-risk{background:rgba(248,81,73,.13);color:#FF7B72}.s-risk::before{background:#F85149}
+.live::before{animation:ping 1.8s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 70%,transparent)}100%{box-shadow:0 0 0 7px color-mix(in srgb,currentColor 0%,transparent)}}
+@media (prefers-reduced-motion: reduce){.tier1{animation:none}}
+.led{display:inline-block;width:8px;height:8px;border-radius:4px;flex:none}
+.led-g{background:#3FB950;box-shadow:0 0 0 3px rgba(63,185,80,.18)}
+.led-a{background:#E3A008;box-shadow:0 0 0 3px rgba(227,160,8,.18)}
+.led-r{background:#F85149;box-shadow:0 0 0 3px rgba(248,81,73,.18)}
+.led-o{background:#3A3D44}
+.stage{display:inline-flex;align-items:center;font-size:11px;font-weight:500;line-height:18px;padding:0 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:#A1A6B0;white-space:nowrap}
+.bar{height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.fill{height:6px;border-radius:3px}
+.f-done{background:#3FB950}.f-doing{background:#4F8CFF}.f-you{background:#E3A008}.f-queue{background:#4B5059}
+.cp5{gap:3px !important}
+.cp5 span{height:6px !important;border-radius:3px !important}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.10);color:#EDEEF0;background:#1A1B1E;cursor:pointer;font-family:inherit;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);transition:background 120ms,border-color 120ms}
+.btn:hover{background:#222327;border-color:rgba(255,255,255,.18);color:#FFFFFF}
+.btn:active,.btn.is-active{background:#141517}
+.btn[aria-current="step"],.btn[aria-current="page"]{background:#26272B;border-color:rgba(255,255,255,.22);color:#FFFFFF}
+.btn-p{background:#EDEEF0;border-color:#EDEEF0;color:#08090A;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+.btn-p:hover{background:#FFFFFF;border-color:#FFFFFF;color:#08090A}
+.btn-p:active,.btn-p.is-active{background:#D4D6DA;color:#08090A}
+.btn-d{color:#FF7B72;border-color:rgba(248,81,73,.35);background:rgba(248,81,73,.08)}
+.btn-d:hover{color:#FFFFFF;background:rgba(248,81,73,.18);border-color:#F85149}
+.btn:disabled,.btn.is-disabled{opacity:.4;cursor:not-allowed}
+.muted{color:#A1A6B0}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.node{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;background:#16171A;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:#EDEEF0}
+.node:hover{color:#FFFFFF;border-color:rgba(255,255,255,.18)}
+.colh{font-size:12px;font-weight:500;color:#8A8F98;margin:0 0 10px}
+th{text-align:left;font-size:12px;font-weight:500;color:#8A8F98;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07);white-space:nowrap}
+td{font-size:13px;padding:10px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;line-height:1.5}
+tr:hover td{background:rgba(255,255,255,.02)}
+.th{text-align:left;font-size:12px;font-weight:500;color:#8A8F98;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07);white-space:nowrap}
+.td{font-size:13px;padding:10px;border-bottom:1px solid rgba(255,255,255,.05);line-height:1.5;min-width:0}
+.tr:hover .td{background:rgba(255,255,255,.02)}
+.opt{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background:#16171A}
+.lane{background:#0C0D0F;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;min-width:0}
+.tc{background:#16171A;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:#EDEEF0}
+a.tc:hover{color:#FFFFFF;border-color:rgba(255,255,255,.16)}
+.lbl{margin:0;font-size:12px;font-weight:500;color:#8A8F98}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat > span:nth-child(2),.num{font-weight:600;color:#F5F6F7;letter-spacing:-.02em}
+.sl{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;padding:0 10px;border-radius:8px;font-size:14px;color:#A1A6B0;text-decoration:none}
+.sl:hover{background:rgba(255,255,255,.05);color:#EDEEF0}
+.sl-on,.sl-on:hover{background:rgba(255,255,255,.08);color:#FFFFFF;font-weight:500}
+.sg{margin:0 0 4px;padding:0 10px;font-size:11px;font-weight:500;color:#6B7079;letter-spacing:.04em}
+.cnt{font-size:11px;font-weight:600;line-height:18px;min-width:20px;padding:0 6px;border-radius:999px;background:rgba(227,160,8,.18);color:#F2C14E;text-align:center;box-sizing:border-box}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:#0C0D0F;border:1px solid rgba(255,255,255,.07)}
+.seg button{font-family:inherit;font-size:13px;min-height:28px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:#A1A6B0;cursor:pointer}
+.seg button:hover{color:#EDEEF0}
+.seg button[aria-pressed="true"]{background:#222327;color:#FFFFFF;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05)}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;padding:1px 6px;border:1px solid rgba(255,255,255,.12);border-radius:5px;color:#A1A6B0;background:#16171A}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:500;color:#C9CDD4}
+.inp{font-family:inherit;font-size:14px;min-height:38px;padding:8px 12px;border:1px solid rgba(255,255,255,.09);border-radius:8px;background:#0C0D0F;color:#EDEEF0;box-sizing:border-box;width:100%}
+.inp::placeholder{color:#6B7079}
+.inp:focus,.inp.is-focus{outline:none;border-color:#7C6CFF;box-shadow:0 0 0 3px rgba(124,108,255,.25)}
+select.inp option{background:#16171A}
+.tile{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;text-decoration:none;box-sizing:border-box;transition:transform 120ms,border-color 120ms}
+.tile-queue{background:transparent !important;color:#8A8F98 !important;border:1px dashed rgba(255,255,255,.18) !important}
+.tile:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.4) !important}
+.lane h2::before{display:none}
+textarea,input,select{color-scheme:dark}
+textarea:not(.inp){background:#0C0D0F;color:#EDEEF0;border-color:rgba(255,255,255,.09) !important}
+textarea:not(.inp):focus{outline:none;border-color:#7C6CFF !important;box-shadow:0 0 0 3px rgba(124,108,255,.25)}
+
+.gt{display:inline-flex;align-items:center;justify-content:center;flex:none;position:relative;box-sizing:border-box;border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -6px 12px rgba(0,0,0,.14),0 6px 14px -8px var(--gt-glow),0 1px 3px rgba(0,0,0,.35)}
+.gt::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,0) 52%);pointer-events:none}
+.gt svg{position:relative;filter:drop-shadow(0 1px 1px rgba(0,0,0,.28))}
+.gt-violet{background:linear-gradient(150deg,#9D90F5 0%,#6A5AD8 100%);--gt-glow:#6A5AD855}.gt-blue{background:linear-gradient(150deg,#7FA7EC 0%,#4170C8 100%);--gt-glow:#4170C855}.gt-cyan{background:linear-gradient(150deg,#6EC4DC 0%,#2B88AA 100%);--gt-glow:#2B88AA55}.gt-green{background:linear-gradient(150deg,#6EC48C 0%,#2F8A52 100%);--gt-glow:#2F8A5255}.gt-amber{background:linear-gradient(150deg,#ECC066 0%,#BF8516 100%);--gt-glow:#BF851655}.gt-rose{background:linear-gradient(150deg,#EE8A82 0%,#C4483F 100%);--gt-glow:#C4483F55}.gt-teal{background:linear-gradient(150deg,#63C7B6 0%,#23897A 100%);--gt-glow:#23897A55}.gt-indigo{background:linear-gradient(150deg,#8D9CF2 0%,#4B58C8 100%);--gt-glow:#4B58C855}
+.float{animation:float 4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.glyph-swing{transform-origin:50% 15%;animation:swing 2.4s ease-in-out infinite}
+@keyframes swing{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-12deg)}30%{transform:rotate(8deg)}40%{transform:rotate(-5deg)}50%{transform:rotate(2deg)}}
+.bot{filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));color:#B4A9FF}
+.bot .gear,.bot .q,.bot .zz,.bot .asleep{display:none}
+.bot-work .gear,.bot-wait .q,.bot-idle .zz,.bot-stand .zz,.bot-idle .asleep,.bot-stand .asleep{display:inline}
+.bot-idle .awake,.bot-stand .awake{display:none}
+.bot .ant{fill:#8E7CFF}.bot-wait .ant{fill:#E3A008}.bot-wait{color:#F2C14E}
+.radar{position:relative;border-radius:50%;overflow:hidden;background:radial-gradient(circle,rgba(124,108,255,.12),rgba(12,13,15,.9) 70%);border:1px solid rgba(255,255,255,.06)}
+.radar .sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(142,124,255,.5),rgba(142,124,255,0) 70deg,rgba(142,124,255,0) 360deg);animation:spin 3s linear infinite}
+.typing{display:inline-flex;gap:3px;align-items:center}
+.typing i{width:4px;height:4px;border-radius:2px;background:#8E7CFF;animation:antp 1s ease-in-out infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+:root{--ease:cubic-bezier(.2,.8,.2,1);--t-fast:150ms;--t-mid:480ms;--t-data:1000ms}
+@keyframes rise{from{transform:translateY(12px)}to{transform:none}}
+main > *{animation:rise var(--t-mid) var(--ease) both}
+main > *:nth-child(2){animation-delay:60ms}main > *:nth-child(3){animation-delay:120ms}main > *:nth-child(4){animation-delay:180ms}main > *:nth-child(5){animation-delay:240ms}main > *:nth-child(6){animation-delay:300ms}main > *:nth-child(7){animation-delay:360ms}main > *:nth-child(n+8){animation-delay:420ms}
+.card,.raised,.tc,.node,.opt{transition:transform var(--t-fast) var(--ease),border-color var(--t-fast),box-shadow var(--t-fast)}
+.card:hover,.raised:hover,.tc:hover,.node:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 30px -14px rgba(0,0,0,.8)}
+.gt{transition:transform 260ms var(--ease)}
+.card:hover .gt,a:hover .gt{transform:rotate(-8deg) scale(1.08)}
+.sl{transition:background var(--t-fast),color var(--t-fast)}
+.sl svg{transition:transform var(--t-fast) var(--ease)}.sl:hover svg{transform:translateX(2px)}
+.btn{transition:background var(--t-fast),border-color var(--t-fast),transform 90ms}.btn:active{transform:scale(.97)}
+.fill{transform-origin:left center;animation:growx var(--t-data) var(--ease) both 200ms}
+@keyframes growx{from{transform:scaleX(0)}to{transform:none}}
+.cp5 span{animation:cellpop 420ms var(--ease) both}
+.cp5 span:nth-child(2){animation-delay:80ms}.cp5 span:nth-child(3){animation-delay:160ms}.cp5 span:nth-child(4){animation-delay:240ms}.cp5 span:nth-child(5){animation-delay:320ms}
+@keyframes cellpop{from{transform:scaleY(.2)}to{transform:none}}
+[role="cell"][title*="引用"]{animation:heatin 600ms var(--ease) both}
+[role="row"] > [role="cell"][title*="引用"]:nth-child(3){animation-delay:40ms}[role="row"] > [role="cell"][title*="引用"]:nth-child(4){animation-delay:80ms}[role="row"] > [role="cell"][title*="引用"]:nth-child(5){animation-delay:120ms}[role="row"] > [role="cell"][title*="引用"]:nth-child(6){animation-delay:160ms}[role="row"] > [role="cell"][title*="引用"]:nth-child(7){animation-delay:200ms}[role="row"] > [role="cell"][title*="引用"]:nth-child(8){animation-delay:240ms}[role="row"] > [role="cell"][title*="引用"]:nth-child(9){animation-delay:280ms}
+@keyframes heatin{from{transform:scale(.6);filter:brightness(2)}to{transform:none;filter:none}}
+.vbars > span,.vbars div > span:last-child{transform-origin:bottom center;animation:growy 800ms var(--ease) both}
+@keyframes growy{from{transform:scaleY(0)}to{transform:none}}
+.shim{background-image:linear-gradient(110deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.28) 50%,rgba(255,255,255,0) 65%),linear-gradient(90deg,#3D7BF0,#4F8CFF) !important;background-size:220% 100%,100% 100% !important;animation:shim 2.4s linear infinite}
+@keyframes shim{from{background-position:130% 0,0 0}to{background-position:-130% 0,0 0}}
+.nowline{animation:nowp 2s ease-in-out infinite}
+@keyframes nowp{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(248,81,73,.0)}50%{opacity:.55;box-shadow:0 0 10px 1px rgba(248,81,73,.6)}}
+@property --n{syntax:'<integer>';inherits:false;initial-value:0}
+.cu{counter-reset:n var(--n);animation:countup 1400ms var(--ease) both 150ms}
+.cu::after{content:counter(n)}
+@keyframes countup{from{--n:0}to{--n:var(--to)}}
+.to-2{--to:2}.to-3{--to:3}.to-4{--to:4}.to-6{--to:6}.to-7{--to:7}.to-9{--to:9}.to-18{--to:18}.to-23{--to:23}.to-78{--to:78}.to-148{--to:148}
+.ants{border-color:transparent !important;background-image:linear-gradient(90deg,rgba(255,255,255,.28) 50%,transparent 0),linear-gradient(90deg,rgba(255,255,255,.28) 50%,transparent 0),linear-gradient(0deg,rgba(255,255,255,.28) 50%,transparent 0),linear-gradient(0deg,rgba(255,255,255,.28) 50%,transparent 0);background-repeat:repeat-x,repeat-x,repeat-y,repeat-y;background-size:12px 1px,12px 1px,1px 12px,1px 12px;background-position:0 0,0 100%,0 0,100% 0;animation:ants 1s linear infinite}
+@keyframes ants{to{background-position:12px 0,-12px 100%,0 -12px,100% 12px}}
+.scan{position:absolute;left:0;right:0;top:-40px;height:40px;background:linear-gradient(180deg,rgba(124,108,255,0),rgba(124,108,255,.35),rgba(124,108,255,0));animation:scan 2.8s ease-in-out infinite;pointer-events:none}
+@keyframes scan{0%{top:-40px}100%{top:100%}}
+.diffp{animation:diffp 1.6s ease-in-out infinite}
+@keyframes diffp{0%,100%{box-shadow:0 0 0 0 rgba(248,81,73,0)}50%{box-shadow:0 0 0 4px rgba(248,81,73,.25)}}
+.flash td{animation:flash 3.2s ease-out infinite}
+@keyframes flash{0%{background:rgba(124,108,255,.20)}60%,100%{background:transparent}}
+.pkt{position:absolute;top:50%;left:0;width:6px;height:6px;margin-top:-3px;border-radius:3px;background:#B4A9FF;box-shadow:0 0 8px #8E7CFF;animation:pkt 1.6s linear infinite}
+@keyframes pkt{0%{left:0;opacity:0}20%{opacity:1}80%{opacity:1}100%{left:calc(100% - 6px);opacity:0}}
+.relay{animation:relay 5s ease-in-out infinite}
+@keyframes relay{0%,14%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 0 0 rgba(124,108,255,0)}6%{box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 0 2px rgba(142,124,255,.75),0 0 18px rgba(124,108,255,.35)}}
+.breathe{animation:breathe 2.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(227,160,8,0)}50%{box-shadow:0 0 12px 1px rgba(227,160,8,.55)}}
+.pill-run{position:relative;overflow:hidden}
+.pill-run::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);background-size:250% 100%;animation:shim 1.8s linear infinite}
+.vbars > .lastbar{animation:growy 800ms var(--ease) both 840ms,lastb 1.2s ease-in-out 1.7s infinite}
+@keyframes lastb{0%,100%{opacity:1}50%{opacity:.35}}
+.cu-loop{counter-reset:n var(--n);animation:countloop 2.8s var(--ease) infinite}
+.cu-loop::after{content:counter(n)}
+@keyframes countloop{0%{--n:0}55%,100%{--n:var(--to)}}
+@keyframes antp{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){main > *,.fill,.cp5 span,[role="cell"][title*="引用"],.vbars > span,.vbars div > span:last-child,.float,.glyph-swing,.scan,.pkt,.radar .sweep,.typing i{animation:none !important}.card:hover,.raised:hover,.tc:hover,.node:hover{transform:none}}
+.nudge{animation:nudge 1.4s ease-in-out infinite}@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}@media (prefers-reduced-motion: reduce){.nudge{animation:none}}/* Motion budget: looping motion only for what needs you (tier1, blocking chips, waiting tiles). */
+.overdue{color:#FF7B72 !important}
+.opt[aria-checked="true"]{border-color:#4F8CFF;box-shadow:0 0 0 1px #4F8CFF;background:rgba(79,140,255,.06)}
+button.opt{cursor:pointer;text-align:left;font:inherit;color:inherit}
+.today-card{color:inherit;text-decoration:none;transition:border-color .15s ease}
+.today-card:hover{border-color:rgba(255,255,255,.18)}
+.tile-done{background:rgba(63,185,80,.14) !important;color:#56D364 !important;border:1px solid rgba(63,185,80,.35)}
+.tile-doing{background:rgba(79,140,255,.16) !important;color:#8DB6FF !important;border:1px solid rgba(79,140,255,.45)}
+.tile-you{background:rgba(227,160,8,.16) !important;color:#F2C14E !important;border:1px solid rgba(227,160,8,.5);animation:ping 1.8s ease-out infinite}
+@media (prefers-reduced-motion: reduce){.tile-you{animation:none}}
+.badge-pop{animation:badgein 600ms var(--ease) both}
+.badge-pop:nth-child(2){animation-delay:90ms}.badge-pop:nth-child(3){animation-delay:180ms}.badge-pop:nth-child(4){animation-delay:270ms}
+@keyframes badgein{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+.badge-pop .gt{overflow:hidden}.badge-pop .gt::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:shine 1.1s var(--ease) .5s 1 both}
+@keyframes shine{to{transform:translateX(120%)}}
+.streak{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;line-height:22px;padding:0 10px 0 8px;border-radius:999px;background:rgba(227,160,8,.10);border:1px solid rgba(227,160,8,.35);color:#F2C14E;text-decoration:none}
+.streak:hover{background:rgba(227,160,8,.16);color:#F2C14E}
+@media (prefers-reduced-motion: reduce){.badge-pop,.badge-pop .gt::after{animation:none}}
+</style>
+</helmet>
+<div class="base" style="box-sizing: border-box; min-height: 2460px; font-family: Inter, 'Noto Sans SC', system-ui, sans-serif; color: #EDEEF0; display: grid; grid-template-columns: 232px minmax(0, 1fr)">
+<svg aria-hidden="true" width="0" height="0" style="position: absolute"><defs><linearGradient id="gs-violet" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#F1EEFF"></stop></linearGradient><linearGradient id="gs-blue" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#F1EEFF"></stop></linearGradient><linearGradient id="gs-cyan" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#F1EEFF"></stop></linearGradient><linearGradient id="gs-green" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#F1EEFF"></stop></linearGradient><linearGradient id="gs-amber" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#F1EEFF"></stop></linearGradient><linearGradient id="gs-rose" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FFFFFF"></stop><stop offset="1" stop-color="#F1EEFF"></stop></linearGradient><linearGradient id="rb-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B3E4A"></stop><stop offset="1" stop-color="#1B1C22"></stop></linearGradient></defs></svg><aside aria-label="侧边导航" style="background: rgba(11,12,14,.92); border-right: 1px solid rgba(255,255,255,.06); padding: 14px 10px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 6px"><div aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #8E7CFF, #4F8CFF); box-shadow: inset 0 1px 0 rgba(255,255,255,.3); display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#101113" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" /></svg></div><div style="display: flex; flex-direction: column; line-height: 1.25"><span style="font-size: 14px; font-weight: 600; color: #F5F6F7">AI 交付控制台</span><span style="font-size: 12px; color: #8A8F98">个人工作区 ▾</span></div></div>
+<a class="btn btn-p" href="Intake.dc.html" style="width: 100%"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M5 12h14" /><path d="M12 5v14" /></svg>登记需求</a>
+<nav aria-label="主导航" style="display: flex; flex-direction: column; gap: 14px">
+<div><p class="sg">工作台</p><div style="display: flex; flex-direction: column; gap: 2px">
+<a class="sl" href="Main.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg><span>全局总览</span></span></a>
+<a class="sl" href="Review.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg><span>待审</span></span><span class="cnt" aria-label="7 件">7</span></a>
+<a class="sl" href="Visual.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><circle cx="12" cy="12" r="1" /><path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0" /></svg><span>截图审核</span></span><span class="cnt" aria-label="1 件">1</span></a>
+<a class="sl" href="Weekly.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M8 2v3" /><path d="M16 2v3" /><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="m9 15 2 2 4-4" /></svg><span>每周复盘</span></span></a>
+</div></div>
+<div><p class="sg">交付</p><div style="display: flex; flex-direction: column; gap: 2px">
+<a class="sl" href="Breakdown.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z" /><path d="m7 16.5-4.74-2.85" /><path d="m7 16.5 5-3" /><path d="M7 16.5v5.17" /><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z" /><path d="m17 16.5-5-3" /><path d="m17 16.5 4.74-2.85" /><path d="M17 16.5v5.17" /><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z" /><path d="M12 8 7.26 5.15" /><path d="m12 8 4.74-2.85" /><path d="M12 13.5V8" /></svg><span>需求拆解</span></span></a>
+<a class="sl" href="Agents.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></svg><span>Agent 看板</span></span></a>
+<a class="sl sl-on" href="Task.dc.html" aria-current="page"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg><span>任务追踪</span></span></a>
+</div></div>
+<div><p class="sg">知识</p><div style="display: flex; flex-direction: column; gap: 2px">
+<a class="sl" href="Knowledge.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M12 5v16" /><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" /></svg><span>知识库</span></span></a>
+<a class="sl" href="Graph.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><rect x="16" y="16" width="6" height="6" rx="1" /><rect x="2" y="16" width="6" height="6" rx="1" /><rect x="9" y="2" width="6" height="6" rx="1" /><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" /><path d="M12 12V8" /></svg><span>知识图谱</span></span><span class="stage">阶段 3</span></a>
+<a class="sl" href="Clients.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M10 12h4" /><path d="M10 8h4" /><path d="M14 21v-3a2 2 0 0 0-4 0v3" /><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2" /><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16" /></svg><span>客户</span></span></a>
+</div></div>
+<div><p class="sg">观测</p><div style="display: flex; flex-direction: column; gap: 2px">
+<a class="sl" href="Metrics.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="m19 9-5 5-4-4-3 3" /></svg><span>指标</span></span></a>
+<a class="sl" href="Live.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></svg><span>实时调用</span></span></a>
+</div></div>
+<div><p class="sg">系统</p><div style="display: flex; flex-direction: column; gap: 2px">
+<a class="sl" href="Pipeline.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z" /></svg><span>采集与处理</span></span></a>
+<a class="sl" href="Distribution.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /><path d="m21.854 2.147-10.94 10.939" /></svg><span>分发</span></span></a>
+<a class="sl" href="Rules.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M12 3v18" /><path d="m19 8 3 8a5 5 0 0 1-6 0zV7" /><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1" /><path d="m5 8 3 8a5 5 0 0 1-6 0zV7" /><path d="M7 21h10" /></svg><span>决策规则</span></span></a>
+<a class="sl" href="System.dc.html"><span style="display: flex; align-items: center; gap: 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></svg><span>系统健康</span></span></a>
+</div></div>
+</nav>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px 10px 0; border-top: 1px solid rgba(255,255,255,.06); font-size: 12px; color: #A1A6B0"><span style="display: flex; align-items: center; gap: 8px"><span class="led led-g" aria-hidden="true"></span>网关在线 · 180 ms</span><span class="muted" style="display: flex; align-items: center; gap: 8px"><span class="led led-g" aria-hidden="true" style="width: 6px; height: 6px"></span>M5 Pro · MacBook Air 在线</span><span class="muted">当前阶段：2 网关与跨项目</span><span class="chip s-queue" style="align-self: flex-start">示例数据</span></div>
+</aside>
+<div style="min-width: 0; display: flex; flex-direction: column">
+<header style="height: 56px; background: rgba(8,9,10,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 32px; box-sizing: border-box"><div role="search" class="inp" style="flex: 0 1 480px; width: auto; display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 12px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg><input aria-label="搜索" placeholder="搜索需求、任务、知识、证据，或输入编号跳转" style="flex: 1; border: 0; background: transparent; font-family: inherit; font-size: 14px; color: #EDEEF0; outline: none; min-width: 0"><span class="kbd">⌘K</span></div><div style="display: flex; align-items: center; gap: 12px"><span class="muted" style="font-size: 13px">周六 11/07 · 16:20</span><button class="btn" type="button" aria-label="通知：即时 2 条，其余在 18:00 合并为摘要"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>即时 2<span class="muted" style="font-weight: 400">· 摘要 18:00</span></button></div></header>
+<main style="box-sizing: border-box; width: 100%; max-width: 1280px; padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<nav aria-label="位置" class="muted" style="font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px">
+<a href="Main.dc.html">全局总览</a><span aria-hidden="true">/</span><a href="Breakdown.dc.html">Black Friday 页面改版</a><span aria-hidden="true">/</span><span>T2</span>
+</nav>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between">
+<div>
+<div style="display: flex; align-items: center; gap: 14px"><span class="gt gt-indigo float" aria-hidden="true" style="width: 44px; height: 44px; border-radius: 12px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#gs-rose)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg></span><h1 style="margin: 0; font-size: 28px; font-weight: 600">T2 · 卡片移动端图片改为服务端裁切</h1></div>
+<p class="muted" style="margin: 6px 0 0; font-size: 14px">开发 C · Claude Code · 分支 <span class="mono">bf/t2-mobile-img</span> · 文件范围 <span class="mono">sections/bundle-card/*</span></p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 280px">
+<div style="display: flex; align-items: center; gap: 10px"><span class="chip s-you">等待你</span><span style="font-size: 13px; font-weight: 500">检查点 1 / 5 · 卡在改动提交</span></div>
+<div class="cp5" role="img" aria-label="检查点 1 / 5" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px"><span style="height: 8px; border-radius: 2px; background: #E3A008"></span><span style="height: 8px; border-radius: 2px; background: rgba(255,255,255,.08)"></span><span style="height: 8px; border-radius: 2px; background: rgba(255,255,255,.08)"></span><span style="height: 8px; border-radius: 2px; background: rgba(255,255,255,.08)"></span><span style="height: 8px; border-radius: 2px; background: rgba(255,255,255,.08)"></span></div>
+</div>
+</div>
+</div>
+<section aria-labelledby="help-h" style="background: rgba(227,160,8,.06); border: 1px solid rgba(227,160,8,.45); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between">
+<h2 id="help-h" style="margin: 0; font-size: 18px; font-weight: 600">求助：是否允许修改共用 CSS</h2>
+<span class="muted" style="font-size: 13px">15:11 提出 · 已等待 69 分钟</span>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.6">要让移动端图片不裁掉商品主体，需要改 <span class="mono">styles/tokens.css</span> 里的图片比例变量。这个文件不在 T2 的范围里，开发 C 尝试修改时被 Claude Code 的改文件前 hook 拦下，网关记下了这次拦截。这个变量还被对比表和推荐区块使用。</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span class="chip s-risk">后果：高 · 影响 3 个已验收区块</span>
+<span class="chip s-you">不确定：高 · 没有覆盖这种情况的已验证知识</span>
+<span class="chip s-queue">风险路由 → 你来决策</span>
+</div>
+<div role="radiogroup" aria-label="选择方案" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px">
+<sc-for list="{{options}}" as="o" hint-placeholder-count="3">
+<button type="button" role="radio" aria-checked="{{o.checked}}" class="opt" onClick="{{o.pick}}">
+<span style="display: flex; gap: 8px; align-items: center"><span style="font-size: 14px; font-weight: 600">{{o.title}}</span><sc-if value="{{o.recommended}}" hint-placeholder-val="{{ false }}"><span class="chip s-doing">推荐</span></sc-if></span>
+<span class="muted" style="font-size: 13px; line-height: 1.5">{{o.desc}}</span>
+<span style="font-size: 12px; line-height: 1.5">{{o.cost}}</span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button class="btn btn-p" type="button">{{replyLabel}}</button>
+</div>
+<p class="muted" style="margin: 0; font-size: 12px">你的回答直接作为由你确认的判断入库，只适用于这个任务，原文存为证据</p>
+</section>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<div style="flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<section class="card" aria-labelledby="cp-h">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px">
+<h2 id="cp-h" style="margin: 0; font-size: 18px; font-weight: 600">完成度 · 1 / 5</h2>
+<span class="muted" style="font-size: 13px">每个检查点都要有对应的事件</span>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{cps}}" as="c" hint-placeholder-count="5">
+<li style="display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.05)">
+<span style="width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; {{c.dot}}">{{c.n}}</span>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; font-weight: 500">{{c.name}}</span><span class="muted" style="font-size: 12px">{{c.ev}}</span></div>
+<span class="chip {{c.cls}}">{{c.state}}</span>
+</li>
+</sc-for>
+</ol>
+</section>
+<section class="card" aria-labelledby="tl-h">
+<h2 id="tl-h" style="margin: 0 0 4px; font-size: 18px; font-weight: 600">事件时间线</h2>
+<p class="muted" style="margin: 0 0 16px; font-size: 13px">来自事件日志，只追加、不可改</p>
+<ol style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{events}}" as="e" hint-placeholder-count="9">
+<li style="display: grid; grid-template-columns: 48px 16px 1fr; gap: 10px; padding-bottom: 16px">
+<span class="mono muted" style="padding-top: 2px">{{e.time}}</span>
+<span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 5px; margin-top: 5px; {{e.dot}}"></span>
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><span class="chip {{e.cls}}">{{e.type}}</span><span style="font-size: 14px; font-weight: 500">{{e.title}}</span></div>
+<span class="muted" style="font-size: 13px; line-height: 1.5">{{e.detail}}</span>
+</div>
+</li>
+</sc-for>
+</ol>
+</section>
+</div>
+<div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<section class="card" aria-labelledby="kn-h">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 4px">
+<h2 id="kn-h" style="margin: 0; font-size: 18px; font-weight: 600">用到的知识</h2>
+<span class="muted" style="font-size: 13px">检索 6 条 · 声称引用 4 条 · 核验一致 4 / 4</span>
+</div>
+<p class="muted" style="margin: 0 0 12px; font-size: 13px">检索到但没用上的知识也列出来，用来判断检索是否精准</p>
+<div style="overflow-x: auto">
+<div role="table" style="width: 100%; border-collapse: collapse; min-width: 560px; display: flex; flex-direction: column">
+<div role="row" class="tr" style="display: grid; grid-template-columns: minmax(0, 2.6fr) minmax(0, 1.1fr) 76px 90px 100px"><div role="columnheader" class="th">知识</div><div role="columnheader" class="th">层级</div><div role="columnheader" class="th">约束</div><div role="columnheader" class="th">可信度</div><div role="columnheader" class="th">本任务</div></div>
+
+<sc-for list="{{knowledge}}" as="k" hint-placeholder-count="6">
+<div role="row" class="tr" style="display: grid; grid-template-columns: minmax(0, 2.6fr) minmax(0, 1.1fr) 76px 90px 100px">
+<div role="cell" class="td"><span class="mono">{{k.id}}</span><br><span>{{k.text}}</span></div>
+<div role="cell" class="td" style="white-space: nowrap">{{k.layer}}</div>
+<div role="cell" class="td"><span class="chip {{k.lvCls}}">{{k.level}}</span></div>
+<div role="cell" class="td" style="white-space: nowrap">{{k.cred}}</div>
+<div role="cell" class="td"><span class="chip {{k.useCls}}">{{k.use}}</span></div>
+</div>
+</sc-for>
+
+</div>
+</div>
+</section>
+<section class="card" aria-labelledby="fl-h">
+<h2 id="fl-h" style="margin: 0 0 12px; font-size: 18px; font-weight: 600">改动文件</h2>
+<ul style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="3">
+<li style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.05)">
+<span class="mono">{{f.path}}</span>
+<div style="display: flex; gap: 8px; align-items: center"><span class="mono" style="color: #56D364">{{f.add}}</span><span class="mono" style="color: #FF7B72">{{f.del}}</span><span class="chip {{f.cls}}">{{f.state}}</span></div>
+</li>
+</sc-for>
+</ul>
+</section>
+<section class="card" aria-labelledby="cd-h">
+<h2 id="cd-h" style="margin: 0 0 12px; font-size: 18px; font-weight: 600">产出与检查</h2>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center"><span class="chip s-doing">候选</span><span class="muted" style="font-size: 12px">客户层 · 必须由你确认</span></div>
+<span style="font-size: 14px; font-weight: 500">该客户主题的移动端断点是 750px，不是默认的 768px</span>
+<span class="muted" style="font-size: 12px">证据：主题源码 <span class="mono">layout/theme.liquid</span> 第 88 行 · 预览站截图 2 张</span>
+<a class="btn" href="Review.dc.html" style="align-self: flex-start; min-height: 36px; font-size: 13px">去审核</a>
+</div>
+<div style="border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center"><span style="font-size: 14px; font-weight: 500">截图比对</span><span class="chip s-queue">未开始</span></div>
+<span class="muted" style="font-size: 12px">iPhone 13 · Pixel 7 · iPad mini · 桌面 1440，等求助解决后由审查回归 agent 执行</span>
+</div>
+</div>
+</section>
+</div>
+</div>
+<section class="card" aria-labelledby="tr-h">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 4px">
+<div style="display: flex; gap: 8px; align-items: center"><h2 id="tr-h" style="margin: 0; font-size: 18px; font-weight: 600">追溯图</h2><span class="stage">阶段 3</span></div>
+<span class="muted" style="font-size: 13px">每条线都对应一条引用或证据记录</span>
+</div>
+<p class="muted" style="margin: 0 0 16px; font-size: 13px">从右往左读：这次的每个产出依据了哪些知识，每条知识又是由哪些原始证据支撑的</p>
+<div style="overflow-x: auto">
+<div style="min-width: 960px">
+<div aria-hidden="true" style="display: grid; grid-template-columns: 300fr 170fr 300fr 170fr 300fr; margin-bottom: 8px">
+<span class="lbl" style="font-size: 12px; font-weight: 600; color: #A1A6B0">证据 · 5</span><span></span>
+<span style="font-size: 12px; font-weight: 600; color: #A1A6B0">知识 · 检索 6，引用 4</span><span></span>
+<span style="font-size: 12px; font-weight: 600; color: #A1A6B0">本任务的产出 · 4</span>
+</div>
+<svg viewBox="0 0 1240 356" width="100%" role="img" aria-label="追溯图：5 条证据支撑 4 条被引用的知识，产生 2 处改动和 1 次求助；另有 2 条知识检索到但没用上，1 条候选来自新证据" style="display: block; font-family: Inter, 'Noto Sans SC', system-ui, sans-serif"><path d="M300 22 C385.0 22 385.0 22 470 22" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="0.37s" repeatCount="indefinite" path="M300 22 C385.0 22 385.0 22 470 22"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="0.37s" repeatCount="indefinite"></animate></circle><path d="M300 84 C385.0 84 385.0 22 470 22" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="0.74s" repeatCount="indefinite" path="M300 84 C385.0 84 385.0 22 470 22"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="0.74s" repeatCount="indefinite"></animate></circle><path d="M300 146 C385.0 146 385.0 84 470 84" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="1.11s" repeatCount="indefinite" path="M300 146 C385.0 146 385.0 84 470 84"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="1.11s" repeatCount="indefinite"></animate></circle><path d="M300 208 C385.0 208 385.0 146 470 146" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="1.48s" repeatCount="indefinite" path="M300 208 C385.0 208 385.0 146 470 146"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="1.48s" repeatCount="indefinite"></animate></circle><path d="M300 270 C385.0 270 385.0 208 470 208" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="1.85s" repeatCount="indefinite" path="M300 270 C385.0 270 385.0 208 470 208"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="1.85s" repeatCount="indefinite"></animate></circle><path d="M770 22 C855.0 22 855.0 22 940 22" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="0.22s" repeatCount="indefinite" path="M770 22 C855.0 22 855.0 22 940 22"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="0.22s" repeatCount="indefinite"></animate></circle><path d="M770 146 C855.0 146 855.0 22 940 22" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="0.59s" repeatCount="indefinite" path="M770 146 C855.0 146 855.0 22 940 22"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="0.59s" repeatCount="indefinite"></animate></circle><path d="M770 84 C855.0 84 855.0 84 940 84" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="0.96s" repeatCount="indefinite" path="M770 84 C855.0 84 855.0 84 940 84"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="0.96s" repeatCount="indefinite"></animate></circle><path d="M770 208 C855.0 208 855.0 146 940 146" fill="none" stroke="#5C616B" stroke-width="1.5" stroke-dasharray="4 5"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.1s" repeatCount="indefinite"></animate></path><circle r="2.6" fill="#B4A9FF"><animateMotion dur="2.2s" begin="1.33s" repeatCount="indefinite" path="M770 208 C855.0 208 855.0 146 940 146"></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.2s" begin="1.33s" repeatCount="indefinite"></animate></circle><g><title>E-311 · 返工复盘 · 09/12：9 月客户 A 移动端图片返工记录</title><rect x="0" y="0" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="14" y="19" font-size="13" font-weight="500" fill="#EDEEF0">9 月客户 A 移动端图片返工记录</text><text x="14" y="35" font-size="11" fill="#A1A6B0">E-311 · 返工复盘 · 09/12</text></g><g><title>E-208 · 官方文档 · 09/14：Shopline 图片服务参数文档截图</title><rect x="0" y="62" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="14" y="81" font-size="13" font-weight="500" fill="#EDEEF0">Shopline 图片服务参数文档截图</text><text x="14" y="97" font-size="11" fill="#A1A6B0">E-208 · 官方文档 · 09/14</text></g><g><title>E-102 · 复盘记录 · 06/30：布局跳动问题复盘</title><rect x="0" y="124" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="14" y="143" font-size="13" font-weight="500" fill="#EDEEF0">布局跳动问题复盘</text><text x="14" y="159" font-size="11" fill="#A1A6B0">E-102 · 复盘记录 · 06/30</text></g><g><title>E-450 · 客户提供 · 08/03：客户 A 品牌手册 v2</title><rect x="0" y="186" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="14" y="205" font-size="13" font-weight="500" fill="#EDEEF0">客户 A 品牌手册 v2</text><text x="14" y="221" font-size="11" fill="#A1A6B0">E-450 · 客户提供 · 08/03</text></g><g><title>E-077 · 回归脚本 · 08/21：8 月共用样式回归失败日志</title><rect x="0" y="248" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="14" y="267" font-size="13" font-weight="500" fill="#EDEEF0">8 月共用样式回归失败日志</text><text x="14" y="283" font-size="11" fill="#A1A6B0">E-077 · 回归脚本 · 08/21</text></g><g><title>K-027 · 建议 · 初步验证：图片裁切走服务端渲染</title><rect x="470" y="0" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><rect x="470" y="8" width="3" height="28" rx="1.5" fill="#5C616B"></rect><text x="484" y="19" font-size="13" font-weight="500" fill="#EDEEF0">图片裁切走服务端渲染</text><text x="484" y="35" font-size="11" fill="#A1A6B0">K-027 · 建议 · 初步验证</text></g><g><title>K-035 · 默认 · 已验证：图片容器用固定比例</title><rect x="470" y="62" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><rect x="470" y="70" width="3" height="28" rx="1.5" fill="#9D8FFF"></rect><text x="484" y="81" font-size="13" font-weight="500" fill="#EDEEF0">图片容器用固定比例</text><text x="484" y="97" font-size="11" fill="#A1A6B0">K-035 · 默认 · 已验证</text></g><g><title>C-A-003 · 红线 · 已验证：品牌色与 logo 区不可改</title><rect x="470" y="124" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><rect x="470" y="132" width="3" height="28" rx="1.5" fill="#D92D20"></rect><text x="484" y="143" font-size="13" font-weight="500" fill="#EDEEF0">品牌色与 logo 区不可改</text><text x="484" y="159" font-size="11" fill="#A1A6B0">C-A-003 · 红线 · 已验证</text></g><g><title>K-021 · 默认 · 已验证：共用文件先单独改完</title><rect x="470" y="186" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><rect x="470" y="194" width="3" height="28" rx="1.5" fill="#9D8FFF"></rect><text x="484" y="205" font-size="13" font-weight="500" fill="#EDEEF0">共用文件先单独改完</text><text x="484" y="221" font-size="11" fill="#A1A6B0">K-021 · 默认 · 已验证</text></g><g><title>K-019 · 检索到但没用上：Liquid 循环嵌套不超过三层</title><rect x="470" y="248" width="300" height="44" rx="8" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.12)" stroke-dasharray="4 3"></rect><text x="484" y="267" font-size="13" font-weight="500" fill="#A1A6B0">Liquid 循环嵌套不超过三层</text><text x="484" y="283" font-size="11" fill="#A1A6B0">K-019 · 检索到但没用上</text></g><g><title>K-040 · 检索到但没用上：懒加载要给占位尺寸</title><rect x="470" y="310" width="300" height="44" rx="8" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.12)" stroke-dasharray="4 3"></rect><text x="484" y="329" font-size="13" font-weight="500" fill="#A1A6B0">懒加载要给占位尺寸</text><text x="484" y="345" font-size="11" fill="#A1A6B0">K-040 · 检索到但没用上</text></g><g><title>card.liquid 改用服务端裁切参数：已修改 · +42 −10</title><rect x="940" y="0" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="954" y="19" font-size="13" font-weight="500" fill="#EDEEF0">card.liquid 改用服务端裁切参数</text><text x="954" y="35" font-size="11" fill="#A1A6B0">已修改 · +42 −10</text></g><g><title>card.css 图片容器改为固定比例：已修改 · +18 −6</title><rect x="940" y="62" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="954" y="81" font-size="13" font-weight="500" fill="#EDEEF0">card.css 图片容器改为固定比例</text><text x="954" y="97" font-size="11" fill="#A1A6B0">已修改 · +18 −6</text></g><g><title>求助：是否改共用 CSS：已有知识覆盖不到这种情况</title><rect x="940" y="124" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="954" y="143" font-size="13" font-weight="500" fill="#EDEEF0">求助：是否改共用 CSS</text><text x="954" y="159" font-size="11" fill="#A1A6B0">已有知识覆盖不到这种情况</text></g><g><title>候选：客户 A 断点 750px：来自新证据 E-512，不来自已有知识</title><rect x="940" y="186" width="300" height="44" rx="8" fill="#16171A" stroke="rgba(255,255,255,.12)"></rect><text x="954" y="205" font-size="13" font-weight="500" fill="#EDEEF0">候选：客户 A 断点 750px</text><text x="954" y="221" font-size="11" fill="#A1A6B0">来自新证据 E-512，不来自已有知识</text></g></svg>
+</div>
+</div>
+<div class="muted" style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 12px">
+<span style="display: inline-flex; gap: 6px; align-items: center"><span aria-hidden="true" style="width: 3px; height: 14px; border-radius: 1.5px; background: #D92D20"></span>红线</span>
+<span style="display: inline-flex; gap: 6px; align-items: center"><span aria-hidden="true" style="width: 3px; height: 14px; border-radius: 1.5px; background: #6E5CF6"></span>默认</span>
+<span style="display: inline-flex; gap: 6px; align-items: center"><span aria-hidden="true" style="width: 3px; height: 14px; border-radius: 1.5px; background: #5C616B"></span>建议</span>
+<span style="display: inline-flex; gap: 6px; align-items: center"><span aria-hidden="true" style="width: 16px; height: 10px; border-radius: 3px; border: 1px dashed #5C616B; background: #0C0D0F; border: 1px solid rgba(255,255,255,.05)"></span>检索到但没用上</span>
+<span>引用表示 agent 声明并经网关核对，不代表这条知识一定起了作用</span>
+</div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2460}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var options = [
+      { recommended: true, title: '拆出 T2b，先改共用变量', desc: '由开发 A 单独改 tokens.css，审查回归 agent 回归 3 个区块后，T2 再继续', cost: '代价：多一个子任务，约晚半天 · 风险最低' },
+      { recommended: false, title: '允许 T2 越界修改', desc: '临时扩大开发 C 的文件范围，改完后由 T4 统一回归', cost: '代价：最快 · 回归失败时要回退两处' },
+      { recommended: false, title: '只改本区块', desc: '在 bundle 卡片里覆盖比例变量，不动共用文件', cost: '代价：留下一处特例，以后改共用样式时容易漏' }
+    ];
+    var types = {
+      '领取': ['s-queue', 'background: #5C616B'],
+      '检索': ['s-doing', 'background: #4F8CFF'],
+      '引用': ['s-doing', 'background: #4F8CFF'],
+      '修改': ['s-done', 'background: #3FB950'],
+      '候选': ['s-doing', 'background: #4F8CFF'],
+      '拦截': ['s-risk', 'background: #D92D20'],
+      '求助': ['s-you', 'background: #E3A008']
+    };
+    var events = [
+      ['14:02', '领取', '从网关领取 T2', '任务 ID TASK-0412-T2 · 身份 dev-c · 文件范围已锁定'],
+      ['14:03', '检索', '查询“移动端图片 裁切 Shopline”', '返回 6 条，按层级和可信度排序'],
+      ['14:05', '引用', '登记引用 K-027、K-035、C-A-003、K-021', '网关核对：4 条都在检索结果里'],
+      ['14:22', '修改', 'card.liquid 改用服务端裁切参数', '+42 −10'],
+      ['14:31', '修改', 'card.css 调整图片容器', '+18 −6'],
+      ['14:40', '候选', '提交候选：客户移动端断点 750px', '附主题源码行号与 2 张截图'],
+      ['15:08', '检索', '查询“共用 tokens 修改流程”', '只命中 K-021，没有覆盖跨区块影响的规则'],
+      ['15:10', '拦截', '尝试修改 styles/tokens.css', '改文件前 hook 检查路径：不在文件范围内，拒绝修改并向网关回报'],
+      ['15:11', '求助', '提出求助，附 3 个方案', '风险路由判定：高后果 × 高不确定，交给你']
+    ].map(function (e) { var t = types[e[1]]; return { time: e[0], type: e[1], title: e[2], detail: e[3], cls: t[0], dot: t[1] }; });
+    var lv = { '红线': 's-risk', '默认': 's-doing', '建议': 's-queue', '参考': 's-queue' };
+    var knowledge = [
+      { id: 'K-027', text: '商品图片的裁切走服务端渲染，不在前端用 CSS 硬裁', layer: 'L2 bundle 插件', level: '建议', cred: '初步验证', use: '已引用' },
+      { id: 'K-035', text: '图片容器用 aspect-ratio 固定比例，防止布局跳动', layer: 'L0 全局', level: '默认', cred: '已验证', use: '已引用' },
+      { id: 'C-A-003', text: '品牌色和 logo 区域不可改动', layer: 'L3 客户 A', level: '红线', cred: '已验证', use: '已引用' },
+      { id: 'K-021', text: '多个子任务共用的文件，先单独改完再并行', layer: 'L0 全局', level: '默认', cred: '已验证', use: '已引用' },
+      { id: 'K-019', text: 'Liquid 模板里避免嵌套三层以上的循环', layer: 'L1 Shopline', level: '建议', cred: '已验证', use: '检索未用' },
+      { id: 'K-040', text: '图片懒加载要给出占位尺寸，防止布局跳动', layer: 'L0 全局', level: '参考', cred: '假设', use: '检索未用' }
+    ].map(function (k) { return Object.assign({}, k, { lvCls: lv[k.level], useCls: k.use === '已引用' ? 's-done' : 's-queue' }); });
+    var files = [
+      { path: 'sections/bundle-card/card.liquid', add: '+42', del: '−10', state: '已修改', cls: 's-done' },
+      { path: 'sections/bundle-card/card.css', add: '+18', del: '−6', state: '已修改', cls: 's-done' },
+      { path: 'styles/tokens.css', add: '', del: '', state: '被 hook 拦下', cls: 's-risk' }
+    ];
+    var cps = [
+      ['1', '领取', '14:02 任务事件 #8812', '通过', 's-done', 'background: #3FB950; color: #08090A'],
+      ['2', '改动提交', '本地已改 2 个文件，未提交：卡在求助', '卡住', 's-you', 'background: #E3A008; color: #FFFFFF'],
+      ['3', '自测与截图', '还没有回报结果', '未开始', 's-queue', 'background: rgba(255,255,255,.08); color: #A1A6B0'],
+      ['4', '你看过截图', '还没有审核事件', '未开始', 's-queue', 'background: rgba(255,255,255,.08); color: #A1A6B0'],
+      ['5', '合并回归通过', '由 T4 合并后回报', '未开始', 's-queue', 'background: rgba(255,255,255,.08); color: #A1A6B0']
+    ].map(function (c) { return { n: c[0], name: c[1], ev: c[2], state: c[3], cls: c[4], dot: c[5] }; });
+    var chosen = this.state && this.state.choice != null ? this.state.choice : 0;
+    var self = this;
+    options = options.map(function (o, i) { return Object.assign({}, o, { checked: i === chosen ? 'true' : 'false', pick: function () { self.setState({ choice: i }); } }); });
+    var replyLabel = '按“' + options[chosen].title + '”回复开发 C';
+    return { replyLabel: replyLabel, options: options, events: events, knowledge: knowledge, files: files, cps: cps };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-07T08:25:00Z"
+ },
+ "title": "AI 交付全局控制台",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 2246,
+   "expand": "fill",
+   "title": "全局总览",
+   "is_interactive": true
+  },
+  "Review.dc.html": {
+   "x": 1520,
+   "y": 0,
+   "w": 1440,
+   "h": 1764,
+   "expand": "fill",
+   "title": "待审",
+   "is_interactive": true
+  },
+  "Visual.dc.html": {
+   "x": 3040,
+   "y": 0,
+   "w": 1440,
+   "h": 1331,
+   "expand": "fill",
+   "title": "截图审核",
+   "is_interactive": true
+  },
+  "Weekly.dc.html": {
+   "x": 4560,
+   "y": 0,
+   "w": 1440,
+   "h": 1844,
+   "expand": "fill",
+   "title": "每周复盘",
+   "is_interactive": true
+  },
+  "Intake.dc.html": {
+   "x": 6080,
+   "y": 0,
+   "w": 1440,
+   "h": 1460,
+   "expand": "fill",
+   "title": "登记需求",
+   "is_interactive": true
+  },
+  "Breakdown.dc.html": {
+   "x": 0,
+   "y": 2366,
+   "w": 1440,
+   "h": 2221,
+   "expand": "fill",
+   "title": "需求拆解",
+   "is_interactive": true
+  },
+  "Agents.dc.html": {
+   "x": 1520,
+   "y": 2366,
+   "w": 1440,
+   "h": 2524,
+   "expand": "fill",
+   "title": "Agent 看板",
+   "is_interactive": true
+  },
+  "Task.dc.html": {
+   "x": 3040,
+   "y": 2366,
+   "w": 1440,
+   "h": 2441,
+   "expand": "fill",
+   "title": "单任务追踪",
+   "is_interactive": true
+  },
+  "Knowledge.dc.html": {
+   "x": 0,
+   "y": 5010,
+   "w": 1440,
+   "h": 1651,
+   "expand": "fill",
+   "title": "知识库",
+   "is_interactive": true
+  },
+  "KnowledgeItem.dc.html": {
+   "x": 1520,
+   "y": 5010,
+   "w": 1440,
+   "h": 1708,
+   "expand": "fill",
+   "title": "单条知识",
+   "is_interactive": true
+  },
+  "Graph.dc.html": {
+   "x": 3040,
+   "y": 5010,
+   "w": 1440,
+   "h": 1075,
+   "expand": "fill",
+   "title": "知识图谱",
+   "is_interactive": true
+  },
+  "Clients.dc.html": {
+   "x": 4560,
+   "y": 5010,
+   "w": 1440,
+   "h": 1505,
+   "expand": "fill",
+   "title": "客户",
+   "is_interactive": true
+  },
+  "Metrics.dc.html": {
+   "x": 0,
+   "y": 6838,
+   "w": 1440,
+   "h": 2523,
+   "expand": "fill",
+   "title": "指标",
+   "is_interactive": true
+  },
+  "Live.dc.html": {
+   "x": 1520,
+   "y": 6838,
+   "w": 1440,
+   "h": 1898,
+   "expand": "fill",
+   "title": "实时调用",
+   "is_interactive": true
+  },
+  "Pipeline.dc.html": {
+   "x": 0,
+   "y": 9481,
+   "w": 1440,
+   "h": 1565,
+   "expand": "fill",
+   "title": "采集与处理",
+   "is_interactive": true
+  },
+  "Distribution.dc.html": {
+   "x": 1520,
+   "y": 9481,
+   "w": 1440,
+   "h": 1477,
+   "expand": "fill",
+   "title": "分发",
+   "is_interactive": true
+  },
+  "Rules.dc.html": {
+   "x": 3040,
+   "y": 9481,
+   "w": 1440,
+   "h": 1866,
+   "expand": "fill",
+   "title": "决策规则",
+   "is_interactive": true
+  },
+  "System.dc.html": {
+   "x": 4560,
+   "y": 9481,
+   "w": 1440,
+   "h": 1564,
+   "expand": "fill",
+   "title": "系统健康",
+   "is_interactive": true
+  },
+  "Components.dc.html": {
+   "x": 0,
+   "y": 11467,
+   "w": 1440,
+   "h": 4150,
+   "expand": "fill",
+   "title": "组件规范",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Review.dc.html",
+  "Visual.dc.html",
+  "Weekly.dc.html",
+  "Intake.dc.html",
+  "Breakdown.dc.html",
+  "Agents.dc.html",
+  "Task.dc.html",
+  "Knowledge.dc.html",
+  "KnowledgeItem.dc.html",
+  "Graph.dc.html",
+  "Clients.dc.html",
+  "Metrics.dc.html",
+  "Live.dc.html",
+  "Pipeline.dc.html",
+  "Distribution.dc.html",
+  "Rules.dc.html",
+  "System.dc.html",
+  "Components.dc.html"
+ ],
+ "notes": {},
+ "designSystems": []
+}
