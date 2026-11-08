@@ -72,7 +72,7 @@ export default function Breakdown() {
                 const done = i < req.step - 1;
                 const cur = i === req.step - 1;
                 const box: CSSProperties = cur ? { background: 'rgba(79,140,255,.10)', border: '1px solid rgba(79,140,255,.5)' } : done ? { background: 'rgba(63,185,80,.06)', border: '1px solid rgba(63,185,80,.3)' } : {};
-                const dot: CSSProperties = done ? { background: '#039855', color: '#FFFFFF' } : cur ? { background: '#4F8CFF', color: '#FFFFFF' } : { background: 'rgba(255,255,255,.08)', color: '#A1A6B0' };
+                const dot: CSSProperties = done ? { background: '#3FB950', color: '#08090A' } : cur ? { background: '#4F8CFF', color: '#FFFFFF' } : { background: 'rgba(255,255,255,.08)', color: '#A1A6B0' };
                 return (
                   <li key={label} className={done || cur ? undefined : 'well'} style={{ borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 6, ...box }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
