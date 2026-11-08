@@ -286,8 +286,26 @@ function IconSection() {
           {muted('输入中：agent 正在工作')}
         </div>
       </Grid>
+      <div style={{ height: 24 }} />
+      {lbl('成就与连续记录')}
+      <p className="muted" style={{ margin: '-4px 0 14px', fontSize: 12 }}>
+        只从真实结果里算，不设打卡任务；进入时奖杯闪一下光，之后保持不动
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+        <div className="badge-pop raised" style={{ padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <GlassIcon name="Trophy" size={40} label="成就：连续 3 周零重复错误" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>零重复错误</span>
+            <span className="muted" style={{ fontSize: 12 }}>连续 3 周没有同一类错误再次出现</span>
+          </div>
+        </div>
+        <a className="streak" href={R.weekly}>
+          <LineIcon name="Trophy" size={14} strokeWidth={2} />
+          连续 3 周零重复错误
+        </a>
+      </div>
       <p className="muted" style={{ margin: '16px 0 0', fontSize: 12 }}>
-        线条图标来自开源图标库 Lucide（ISC 许可）。动效用 CSS 和 SVG 原生动画（SMIL）实现，比 GIF 清晰、文件更小。系统开启“减少动态效果”时，位移类动效停止，颜色和透明度提示保留
+        线条图标来自开源图标库 Lucide（ISC 许可）。动效用 CSS 和 SVG 原生动画（SMIL）实现，比 GIF 清晰、文件更小。系统开启“减少动态效果”时，所有循环动画停止（含入场动画），状态仍由颜色和阴影静态表达，不丢信息
       </p>
     </Section>
   );

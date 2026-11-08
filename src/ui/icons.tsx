@@ -1,6 +1,7 @@
 import { createElement, type CSSProperties } from 'react';
 import { ICON_PATHS, type IconName } from './iconPaths';
 import { ICON_TINT, TINTS, type Tint } from './tints';
+import { useReducedMotion } from './useReducedMotion';
 
 export type { IconName, Tint };
 function Glyph({ name }: { name: IconName }) {
@@ -58,11 +59,15 @@ export type RobotState = 'work' | 'wait' | 'idle' | 'stand';
 
 const loop = { repeatCount: 'indefinite' } as const;
 
-function Eye({ x }: { x: number }) {
+function Eye({ x, still }: { x: number; still?: boolean }) {
   return (
     <rect x={x} y="29" width="5" height="8" rx="2.5" fill="currentColor">
-      <animate attributeName="height" values="8;8;1;8" dur="4.2s" keyTimes="0;.9;.94;1" {...loop} />
-      <animate attributeName="y" values="29;29;32.5;29" dur="4.2s" keyTimes="0;.9;.94;1" {...loop} />
+      {!still && (
+        <>
+          <animate attributeName="height" values="8;8;1;8" dur="4.2s" keyTimes="0;.9;.94;1" {...loop} />
+          <animate attributeName="y" values="29;29;32.5;29" dur="4.2s" keyTimes="0;.9;.94;1" {...loop} />
+        </>
+      )}
     </rect>
   );
 }
@@ -73,12 +78,13 @@ function Eye({ x }: { x: number }) {
  */
 export function Robot({ state, size = 40, label }: { state: RobotState; size?: number; label?: string }) {
   const a11y = label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true as const };
+  const still = useReducedMotion();
   return (
     <svg className={`bot bot-${state}`} width={size} height={size} viewBox="0 0 64 64" {...a11y} style={{ flex: 'none', overflow: 'visible' }}>
       <line x1="32" y1="13" x2="32" y2="7" stroke="#5C616B" strokeWidth="2" strokeLinecap="round" />
       <g className="awake">
         <circle className="ant" cx="32" cy="6" r="3">
-          <animate attributeName="opacity" values="1;.3;1" dur="1.6s" {...loop} />
+          {!still && <animate attributeName="opacity" values="1;.3;1" dur="1.6s" {...loop} />}
         </circle>
       </g>
       <g className="asleep">
@@ -90,8 +96,8 @@ export function Robot({ state, size = 40, label }: { state: RobotState; size?: n
       <rect x="16" y="16" width="32" height="5" rx="2.5" fill="#FEFEFE" opacity=".06" />
       <rect x="16" y="23" width="32" height="20" rx="10" fill="#0B0C10" />
       <g className="awake eyes">
-        <Eye x={23} />
-        <Eye x={36} />
+        <Eye x={23} still={still} />
+        <Eye x={36} still={still} />
       </g>
       <g className="asleep">
         <rect x="23" y="32" width="5" height="2" rx="1" fill="#5C616B" />
@@ -100,24 +106,24 @@ export function Robot({ state, size = 40, label }: { state: RobotState; size?: n
       <g className="gear">
         <circle cx="52" cy="52" r="8" fill="#101113" stroke="rgba(255,255,255,.12)" />
         <path d="M52 46.5 A5.5 5.5 0 1 1 46.5 52" fill="none" stroke="#A99CFF" strokeWidth="2.4" strokeLinecap="round">
-          <animateTransform attributeName="transform" type="rotate" from="0 52 52" to="360 52 52" dur="1.1s" {...loop} />
+          {!still && <animateTransform attributeName="transform" type="rotate" from="0 52 52" to="360 52 52" dur="1.1s" {...loop} />}
         </path>
       </g>
       <g className="q">
-        <animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="1.1s" {...loop} />
+        {!still && <animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="1.1s" {...loop} />}
         <circle cx="53" cy="11" r="8.5" fill="#E3A008" />
         <text x="53" y="15.5" textAnchor="middle" fontSize="12" fontWeight="800" fill="#1A1200" fontFamily="Inter, sans-serif">?</text>
       </g>
       <g className="zz">
         <text x="49" y="13" fontSize="11" fontWeight="700" fill="#6B7079" fontFamily="Inter, sans-serif">
           z
-          <animate attributeName="opacity" values="0;1;0" dur="2.6s" {...loop} />
-          <animate attributeName="y" values="16;13;6" dur="2.6s" {...loop} />
+          {!still && <animate attributeName="opacity" values="0;1;0" dur="2.6s" {...loop} />}
+          {!still && <animate attributeName="y" values="16;13;6" dur="2.6s" {...loop} />}
         </text>
         <text x="55" y="7" fontSize="8" fontWeight="700" fill="#6B7079" fontFamily="Inter, sans-serif">
           z
-          <animate attributeName="opacity" values="0;1;0" dur="2.6s" begin="0.9s" {...loop} />
-          <animate attributeName="y" values="10;7;0" dur="2.6s" begin="0.9s" {...loop} />
+          {!still && <animate attributeName="opacity" values="0;1;0" dur="2.6s" begin="0.9s" {...loop} />}
+          {!still && <animate attributeName="y" values="10;7;0" dur="2.6s" begin="0.9s" {...loop} />}
         </text>
       </g>
     </svg>
@@ -132,11 +138,12 @@ const SPARKS: [d: string, fill: string, begin: string][] = [
 
 /** Twinkling stars pinned to the top-right corner of a relatively positioned parent. */
 export function Sparkles() {
+  const still = useReducedMotion();
   return (
     <svg className="spark" aria-hidden="true" width="40" height="40" viewBox="0 0 40 40" style={{ position: 'absolute', right: -14, top: -14, overflow: 'visible' }}>
       {SPARKS.map(([d, fill, begin]) => (
-        <path key={d} d={d} fill={fill} opacity=".2">
-          <animate attributeName="opacity" values=".15;1;.15" dur="1.8s" begin={begin} {...loop} />
+        <path key={d} d={d} fill={fill} opacity={still ? '.7' : '.2'}>
+          {!still && <animate attributeName="opacity" values=".15;1;.15" dur="1.8s" begin={begin} {...loop} />}
         </path>
       ))}
     </svg>
@@ -149,8 +156,9 @@ const BLIPS: [x: number, y: number, r: number, c: string, begin: string][] = [
   [62, 72, 2.5, '#A99CFF', '1s'],
 ];
 
-/** Radar with a CSS sweep and SMIL blips; used for live activity. */
+/** Radar with a CSS sweep and SMIL blips; used for live activity. The CSS sweep stops via @media; the SMIL blips drop their <animate> under reduced motion. */
 export function Radar({ size = 96, style }: { size?: number; style?: CSSProperties }) {
+  const still = useReducedMotion();
   return (
     <div className="radar" aria-hidden="true" style={{ width: size, height: size, ...style }}>
       <svg width={size} height={size} viewBox="0 0 100 100" style={{ position: 'absolute', inset: 0 }}>
@@ -161,12 +169,14 @@ export function Radar({ size = 96, style }: { size?: number; style?: CSSProperti
         {BLIPS.map(([x, y, r, c, begin]) => (
           <g key={`${x}-${y}`}>
             <circle cx={x} cy={y} r={r} fill={c}>
-              <animate attributeName="opacity" values="1;.25;1" dur="1.6s" begin={begin} {...loop} />
+              {!still && <animate attributeName="opacity" values="1;.25;1" dur="1.6s" begin={begin} {...loop} />}
             </circle>
-            <circle cx={x} cy={y} r={r} fill="none" stroke={c}>
-              <animate attributeName="r" values={`${r};${r + 7}`} dur="1.6s" begin={begin} {...loop} />
-              <animate attributeName="opacity" values=".8;0" dur="1.6s" begin={begin} {...loop} />
-            </circle>
+            {!still && (
+              <circle cx={x} cy={y} r={r} fill="none" stroke={c}>
+                <animate attributeName="r" values={`${r};${r + 7}`} dur="1.6s" begin={begin} {...loop} />
+                <animate attributeName="opacity" values=".8;0" dur="1.6s" begin={begin} {...loop} />
+              </circle>
+            )}
           </g>
         ))}
       </svg>
@@ -175,16 +185,19 @@ export function Radar({ size = 96, style }: { size?: number; style?: CSSProperti
   );
 }
 
-/** Right arrow with a travelling packet, used between pipeline stages. */
+/** Right arrow with a travelling packet, used between pipeline stages. The arrow's CSS nudge stops via @media; the travelling packet drops under reduced motion. */
 export function FlowArrow() {
+  const still = useReducedMotion();
   return (
     <div aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg className="nudge" width="24" height="24" viewBox="0 0 24 24" style={{ overflow: 'visible' }}>
         <path d="M4 12h14m-5-5 5 5-5 5" fill="none" stroke="#5C616B" strokeWidth="1.6" />
-        <circle r="2.2" fill="#B4A9FF">
-          <animateMotion dur="1.3s" repeatCount="indefinite" path="M-2 12 H18" />
-          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.2;.8;1" dur="1.3s" repeatCount="indefinite" />
-        </circle>
+        {!still && (
+          <circle r="2.2" fill="#B4A9FF">
+            <animateMotion dur="1.3s" repeatCount="indefinite" path="M-2 12 H18" />
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.2;.8;1" dur="1.3s" repeatCount="indefinite" />
+          </circle>
+        )}
       </svg>
     </div>
   );
