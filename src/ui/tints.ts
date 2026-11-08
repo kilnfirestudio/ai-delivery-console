@@ -21,6 +21,6 @@ export const TINTS: Record<Tint, { base: string; light: string }> = {
  */
 export const ICON_TINT: Partial<Record<IconName, Tint>> = {
   Main: 'violet', Review: 'amber', Visual: 'cyan', Weekly: 'rose', Intake: 'green', Breakdown: 'indigo', Agents: 'violet',
-  Task: 'rose', Knowledge: 'blue', Graph: 'violet', Clients: 'cyan', Metrics: 'green', Live: 'amber', Pipeline: 'teal',
+  Task: 'indigo', Knowledge: 'blue', Graph: 'violet', Clients: 'cyan', Metrics: 'green', Live: 'amber', Pipeline: 'teal',
   Distribution: 'blue', Rules: 'violet', System: 'green', Components: 'violet', Bell: 'amber', Trophy: 'amber',
 };
