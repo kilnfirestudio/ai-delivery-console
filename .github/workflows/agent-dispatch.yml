@@ -1,0 +1,48 @@
+name: Agent dispatch
+
+# Issue 关闭（PR 合并后自动关闭）时检查当前批次，给下一批 Issue 派活，并在通知 Issue 汇报。
+# 派活规则和分工在 .github/agent-tasks.json。
+on:
+  issues:
+    types: [closed, reopened]
+  schedule:
+    - cron: '30 1 * * *' # 每天 09:30 北京时间兜底检查一次
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只打印要派的任务，不留言'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: agent-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      # 只检出默认分支，不运行任何 PR 里的代码
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/github-script@v7
+        env:
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          HAS_DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN != '' }}
+        with:
+          # 配了 DISPATCH_TOKEN（所有者账号的 fine-grained token）时用它留言，Codex / Cursor 才会把它当成人的 @
+          github-token: ${{ secrets.DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const run = require('./.github/scripts/dispatch-agents.cjs');
+            await run({
+              github, context, core,
+              dryRun: process.env.DRY_RUN === 'true',
+              usingDispatchToken: process.env.HAS_DISPATCH_TOKEN === 'true',
+            });
