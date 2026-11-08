@@ -1,16 +1,16 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { R } from '../app/routes';
 import { CHECKPOINTS, useData, type ConsoleData, type ConstraintLevel, type KnowledgeItem, type TaskDetail, type TaskEventType, type Tone } from '../data';
-import { agentById, findSubtask, LEVEL_TONE, SUBTASK_STATE_LABEL } from '../data/selectors';
+import { agentById, attentionHref, findSubtask, LEVEL_TONE, nextAttention, requirementHref, SUBTASK_STATE_LABEL, waitState } from '../data/selectors';
 import { CheckpointBar, Chip, PageHeader, PageMain, Rich } from '../ui/primitives';
 
 const EVENT_STYLE: Record<TaskEventType, [Tone, string]> = {
   领取: ['queue', '#5C616B'],
-  检索: ['doing', '#6E5CF6'],
-  引用: ['doing', '#6E5CF6'],
+  检索: ['doing', '#4F8CFF'],
+  引用: ['doing', '#4F8CFF'],
   修改: ['done', '#039855'],
-  候选: ['doing', '#6E5CF6'],
+  候选: ['doing', '#4F8CFF'],
   拦截: ['risk', '#D92D20'],
   求助: ['you', '#DC6803'],
 };
@@ -105,12 +105,17 @@ export default function Task() {
   const stuckAt = CHECKPOINTS[s.checkpoint];
   const retrieved = t?.retrieved.map((r) => ({ ...r, item: d.knowledge.find((k) => k.id === r.id) as KnowledgeItem })) ?? [];
   const citedCount = retrieved.filter((r) => r.cited).length;
+  const wait = waitState(d, help?.waitedMin);
+  const next = help ? nextAttention(d, help.id) : undefined;
+  const recommended = Math.max(0, t?.help?.options.findIndex((o) => o.recommended) ?? 0);
+  const [choice, setChoice] = useState(recommended);
+  const [decided, setDecided] = useState<number>();
 
   return (
     <PageMain>
       <PageHeader
         icon="Task"
-        crumbs={[['全局总览', R.overview], [req?.title ?? s.requirementId, R.breakdown], [s.id]]}
+        crumbs={[['全局总览', R.overview], [req?.title ?? s.requirementId, requirementHref(s.requirementId)], [s.id]]}
         title={`${s.id} · ${s.title}`}
         sub={
           <>
@@ -132,13 +137,13 @@ export default function Task() {
       />
 
       {t?.help && help && (
-        <section aria-labelledby="help-h" style={{ background: 'rgba(227,160,8,.06)', border: '1px solid rgba(227,160,8,.45)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <section aria-labelledby="help-h" style={{ background: 'rgba(227,160,8,.06)', border: `1px solid ${wait.overdue ? 'rgba(248,81,73,.55)' : 'rgba(227,160,8,.45)'}`, borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 id="help-h" style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
               {`求助：${t.help.question}`}
             </h2>
-            <span className="muted" style={{ fontSize: 13 }}>
-              {`${help.since} 提出 · 已等待 ${help.waitedMin} 分钟`}
+            <span className={wait.overdue ? 'overdue' : 'muted'} style={{ fontSize: 13, fontWeight: wait.overdue ? 600 : 400 }}>
+              {`${help.since} 提出 · ${wait.label}`}
             </span>
           </div>
           <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>
@@ -149,129 +154,54 @@ export default function Task() {
             <Chip tone="you">{`不确定：${t.help.uncertainty}`}</Chip>
             <Chip>风险路由 → 你来决策</Chip>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
-            {t.help.options.map((o) => (
-              <div key={o.title} className="opt">
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{o.title}</span>
-                <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
-                  {o.desc}
-                </span>
-                <span style={{ fontSize: 12, lineHeight: 1.5 }}>{o.cost}</span>
+          {decided === undefined ? (
+            <>
+              <div role="radiogroup" aria-label="选择方案" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+                {t.help.options.map((o, i) => (
+                  <button key={o.title} type="button" role="radio" aria-checked={choice === i} className="opt" onClick={() => setChoice(i)}>
+                    <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>{o.title}</span>
+                      {o.recommended && <Chip tone="doing">推荐</Chip>}
+                    </span>
+                    <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                      {o.desc}
+                    </span>
+                    <span style={{ fontSize: 12, lineHeight: 1.5 }}>{o.cost}</span>
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {t.help.options.map((o, i) => (
-              <button key={o.title} className={i === 0 ? 'btn btn-p' : 'btn'} type="button">
-                {o.title}
-              </button>
-            ))}
-          </div>
-          <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-            你的回答直接作为由你确认的判断入库，只适用于这个任务，原文存为证据。如果处理层从中总结出通用规则（例如“共用变量的改动必须单独成任务”），那条规则才作为候选进入候选区
-          </p>
-        </section>
-      )}
-
-      {t && (
-        <section className="card" aria-labelledby="tr-h">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <h2 id="tr-h" style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-                追溯图
-              </h2>
-              <span className="stage">阶段 3</span>
-            </div>
-            <span className="muted" style={{ fontSize: 13 }}>
-              每条线都对应一条引用或证据记录
-            </span>
-          </div>
-          <p className="muted" style={{ margin: '0 0 16px', fontSize: 13 }}>
-            从右往左读：这次的每个产出依据了哪些知识，每条知识又是由哪些原始证据支撑的
-          </p>
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ minWidth: 960 }}>
-              <div aria-hidden="true" style={{ display: 'grid', gridTemplateColumns: '300fr 170fr 300fr 170fr 300fr', marginBottom: 8 }}>
-                <span className="lbl" style={{ fontSize: 12, fontWeight: 600, color: '#A1A6B0' }}>
-                  {`证据 · ${t.trace.evidence.length}`}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+                <button className="btn btn-p" type="button" onClick={() => setDecided(choice)}>
+                  {`按“${t.help.options[choice].title}”回复开发 C`}
+                </button>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  你的回答直接作为由你确认的判断入库，只适用于这个任务，原文存为证据
                 </span>
-                <span />
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#A1A6B0' }}>{`知识 · 检索 ${t.retrieved.length}，引用 ${citedCount}`}</span>
-                <span />
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#A1A6B0' }}>{`本任务的产出 · ${t.trace.outputs.length}`}</span>
               </div>
-              <TraceGraph d={d} t={t} />
-            </div>
-          </div>
-          <div className="muted" style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12, fontSize: 12 }}>
-            {(['红线', '默认', '建议'] as const).map((lv) => (
-              <span key={lv} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                <span aria-hidden="true" style={{ width: 3, height: 14, borderRadius: 1.5, background: lv === '默认' ? '#6E5CF6' : LEVEL_BAR[lv] }} />
-                {lv}
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, background: 'rgba(63,185,80,.08)' }}>
+              <span style={{ fontSize: 14 }}>
+                <Chip tone="done">已回复</Chip> {`${t.help.options[decided].title}。${a?.name ?? 'agent'} 会从检查点 ${s.checkpoint + 1} 继续`}
               </span>
-            ))}
-            <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-              <span className="well" aria-hidden="true" style={{ width: 16, height: 10, borderRadius: 3 }} />
-              检索到但没用上
-            </span>
-            <span>引用表示 agent 声明并经网关核对，不代表这条知识一定起了作用</span>
-          </div>
+              <span style={{ display: 'flex', gap: 8 }}>
+                <button className="btn" type="button" onClick={() => setDecided(undefined)}>
+                  撤回
+                </button>
+                {next && (
+                  <Link className="btn btn-p" to={attentionHref(next)}>
+                    {`下一件：${next.title}`}
+                  </Link>
+                )}
+              </span>
+            </div>
+          )}
         </section>
       )}
 
       {t && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
           <div style={{ flex: '1 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <section className="card" aria-labelledby="tl-h">
-              <h2 id="tl-h" style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600 }}>
-                事件时间线
-              </h2>
-              <p className="muted" style={{ margin: '0 0 16px', fontSize: 13 }}>
-                来自事件日志，只追加、不可改
-              </p>
-              <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {t.events.map((e) => (
-                  <li key={`${e.time}-${e.title}`} style={{ display: 'grid', gridTemplateColumns: '48px 16px 1fr', gap: 10, paddingBottom: 16 }}>
-                    <span className="mono muted" style={{ paddingTop: 2 }}>
-                      {e.time}
-                    </span>
-                    <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 5, marginTop: 5, background: EVENT_STYLE[e.type][1] }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                        <Chip tone={EVENT_STYLE[e.type][0]}>{e.type}</Chip>
-                        <span style={{ fontSize: 14, fontWeight: 500 }}>{e.title}</span>
-                      </div>
-                      <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
-                        {e.detail}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </section>
-            <section className="card" aria-labelledby="fl-h">
-              <h2 id="fl-h" style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600 }}>
-                改动文件
-              </h2>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {t.files.map((f) => (
-                  <li key={f.path} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid rgba(255,255,255,.05)' }}>
-                    <span className="mono">{f.path}</span>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span className="mono" style={{ color: '#56D364' }}>
-                        {f.added !== undefined ? `+${f.added}` : ''}
-                      </span>
-                      <span className="mono" style={{ color: '#FF7B72' }}>
-                        {f.removed !== undefined ? `−${f.removed}` : ''}
-                      </span>
-                      <Chip tone={f.state === '已修改' ? 'done' : 'risk'}>{f.state}</Chip>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </div>
-          <div style={{ flex: '1 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
             <section className="card" aria-labelledby="cp-h">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h2 id="cp-h" style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
@@ -300,6 +230,35 @@ export default function Task() {
                 })}
               </ol>
             </section>
+            <section className="card" aria-labelledby="tl-h">
+              <h2 id="tl-h" style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600 }}>
+                事件时间线
+              </h2>
+              <p className="muted" style={{ margin: '0 0 16px', fontSize: 13 }}>
+                来自事件日志，只追加、不可改
+              </p>
+              <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {t.events.map((e) => (
+                  <li key={`${e.time}-${e.title}`} style={{ display: 'grid', gridTemplateColumns: '48px 16px 1fr', gap: 10, paddingBottom: 16 }}>
+                    <span className="mono muted" style={{ paddingTop: 2 }}>
+                      {e.time}
+                    </span>
+                    <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 5, marginTop: 5, background: EVENT_STYLE[e.type][1] }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                        <Chip tone={EVENT_STYLE[e.type][0]}>{e.type}</Chip>
+                        <span style={{ fontSize: 14, fontWeight: 500 }}>{e.title}</span>
+                      </div>
+                      <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                        {e.detail}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </div>
+          <div style={{ flex: '1 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
             <section className="card" aria-labelledby="kn-h">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <h2 id="kn-h" style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
@@ -348,6 +307,27 @@ export default function Task() {
                 </div>
               </div>
             </section>
+            <section className="card" aria-labelledby="fl-h">
+              <h2 id="fl-h" style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600 }}>
+                改动文件
+              </h2>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {t.files.map((f) => (
+                  <li key={f.path} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid rgba(255,255,255,.05)' }}>
+                    <span className="mono">{f.path}</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span className="mono" style={{ color: '#56D364' }}>
+                        {f.added !== undefined ? `+${f.added}` : ''}
+                      </span>
+                      <span className="mono" style={{ color: '#FF7B72' }}>
+                        {f.removed !== undefined ? `−${f.removed}` : ''}
+                      </span>
+                      <Chip tone={f.state === '已修改' ? 'done' : 'risk'}>{f.state}</Chip>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
             <section className="card" aria-labelledby="cd-h">
               <h2 id="cd-h" style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600 }}>
                 产出与检查
@@ -393,6 +373,52 @@ export default function Task() {
             </section>
           </div>
         </div>
+      )}
+
+      {t && (
+        <section className="card" aria-labelledby="tr-h">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <h2 id="tr-h" style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+                追溯图
+              </h2>
+              <span className="stage">阶段 3</span>
+            </div>
+            <span className="muted" style={{ fontSize: 13 }}>
+              每条线都对应一条引用或证据记录
+            </span>
+          </div>
+          <p className="muted" style={{ margin: '0 0 16px', fontSize: 13 }}>
+            从右往左读：这次的每个产出依据了哪些知识，每条知识又是由哪些原始证据支撑的
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: 960 }}>
+              <div aria-hidden="true" style={{ display: 'grid', gridTemplateColumns: '300fr 170fr 300fr 170fr 300fr', marginBottom: 8 }}>
+                <span className="lbl" style={{ fontSize: 12, fontWeight: 600, color: '#A1A6B0' }}>
+                  {`证据 · ${t.trace.evidence.length}`}
+                </span>
+                <span />
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#A1A6B0' }}>{`知识 · 检索 ${t.retrieved.length}，引用 ${citedCount}`}</span>
+                <span />
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#A1A6B0' }}>{`本任务的产出 · ${t.trace.outputs.length}`}</span>
+              </div>
+              <TraceGraph d={d} t={t} />
+            </div>
+          </div>
+          <div className="muted" style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12, fontSize: 12 }}>
+            {(['红线', '默认', '建议'] as const).map((lv) => (
+              <span key={lv} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                <span aria-hidden="true" style={{ width: 3, height: 14, borderRadius: 1.5, background: lv === '默认' ? '#6E5CF6' : LEVEL_BAR[lv] }} />
+                {lv}
+              </span>
+            ))}
+            <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+              <span className="well" aria-hidden="true" style={{ width: 16, height: 10, borderRadius: 3 }} />
+              检索到但没用上
+            </span>
+            <span>引用表示 agent 声明并经网关核对，不代表这条知识一定起了作用</span>
+          </div>
+        </section>
       )}
     </PageMain>
   );

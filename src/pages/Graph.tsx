@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { R } from '../app/routes';
 import { useData, type ConsoleData, type Credibility, type KnowledgeItem } from '../data';
+import { knowledgeHref } from '../data/selectors';
 import { Chip, Col, Legend, List, PageHeader, PageMain, Row, Section, SegControl, Stage } from '../ui/primitives';
 
 /*
@@ -273,7 +273,7 @@ export default function Graph() {
                   ...(rec?.tasks && rec.usage ? [{ key: 'tk', main: `被 ${rec.tasks.total} 个任务引用`, meta: `一次通过 ${rec.usage.firstPass[0]} / ${rec.usage.firstPass[1]}` }] : []),
                 ]}
               />
-              <Link className="btn" to={R.knowledgeItem} style={{ alignSelf: 'flex-start' }}>
+              <Link className="btn" to={knowledgeHref(selected)} style={{ alignSelf: 'flex-start' }}>
                 打开条目
               </Link>
             </div>

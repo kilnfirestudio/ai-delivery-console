@@ -10,7 +10,7 @@ export const taskDetails: TaskDetail[] = [
       consequence: '高 · 影响 3 个已验收区块',
       uncertainty: '高 · 没有覆盖这种情况的已验证知识',
       options: [
-        { title: '拆出 T2b，先改共用变量', desc: '由开发 A 单独改 tokens.css，审查回归 agent 回归 3 个区块后，T2 再继续', cost: '代价：多一个子任务，约晚半天 · 风险最低' },
+        { title: '拆出 T2b，先改共用变量', desc: '由开发 A 单独改 tokens.css，审查回归 agent 回归 3 个区块后，T2 再继续', cost: '代价：多一个子任务，约晚半天 · 风险最低', recommended: true },
         { title: '允许 T2 越界修改', desc: '临时扩大开发 C 的文件范围，改完后由 T4 统一回归', cost: '代价：最快 · 回归失败时要回退两处' },
         { title: '只改本区块', desc: '在 bundle 卡片里覆盖比例变量，不动共用文件', cost: '代价：留下一处特例，以后改共用样式时容易漏' },
       ],

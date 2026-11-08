@@ -171,7 +171,6 @@ export interface AttentionItem {
   waitedMin?: number;
   /** Longer explanation shown where the decision is made. */
   body?: string;
-  route: string;
   refs?: { requirement?: string; subtask?: string; knowledge?: string; candidate?: string };
 }
 
@@ -278,7 +277,7 @@ export interface HelpRequest {
   body: string;
   consequence: string;
   uncertainty: string;
-  options: { title: string; desc: string; cost: string }[];
+  options: { title: string; desc: string; cost: string; recommended?: boolean }[];
 }
 
 /** Everything recorded for one subtask: what it read, what it changed, and why. */
