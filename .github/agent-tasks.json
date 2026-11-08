@@ -1,0 +1,41 @@
+{
+  "notifyIssue": 40,
+  "_autoFromBatch": "批次 1 已由所有者手动派出，工作流从批次 2 开始自动派活",
+  "autoFromBatch": 2,
+  "agents": {
+    "codex": { "name": "Codex", "mode": "mention", "mention": "@codex", "branchPrefix": "codex" },
+    "cursor": { "name": "Cursor", "mode": "mention", "mention": "@cursor", "branchPrefix": "cursor" },
+    "antigravity": { "name": "Antigravity", "mode": "manual", "branchPrefix": "antigravity" }
+  },
+  "tasks": [
+    { "issue": 16, "agent": "antigravity", "batch": 1 },
+    { "issue": 17, "agent": "codex", "batch": 1 },
+    { "issue": 41, "agent": "cursor", "batch": 1 },
+
+    { "issue": 42, "agent": "cursor", "batch": 2 },
+    { "issue": 23, "agent": "cursor", "batch": 2 },
+    { "issue": 43, "agent": "antigravity", "batch": 2 },
+    { "issue": 44, "agent": "antigravity", "batch": 2, "after": [43] },
+    { "issue": 22, "agent": "antigravity", "batch": 2 },
+    { "issue": 21, "agent": "codex", "batch": 2 },
+    { "issue": 25, "agent": "codex", "batch": 2 },
+
+    { "issue": 27, "agent": "cursor", "batch": 3 },
+    { "issue": 28, "agent": "cursor", "batch": 3 },
+    { "issue": 29, "agent": "cursor", "batch": 3 },
+    { "issue": 26, "agent": "antigravity", "batch": 3 },
+    { "issue": 30, "agent": "codex", "batch": 3 },
+    { "issue": 31, "agent": "codex", "batch": 3 },
+
+    { "issue": 33, "agent": "cursor", "batch": 4 },
+    { "issue": 35, "agent": "cursor", "batch": 4 },
+    { "issue": 34, "agent": "antigravity", "batch": 4 },
+    { "issue": 37, "agent": "antigravity", "batch": 4 },
+    { "issue": 36, "agent": "codex", "batch": 4 },
+    { "issue": 45, "agent": "codex", "batch": 4 },
+
+    { "issue": 46, "agent": "codex", "batch": 5 },
+    { "issue": 32, "agent": "cursor", "batch": 5 },
+    { "issue": 19, "agent": "antigravity", "batch": 5, "after": [46, 32] }
+  ]
+}
