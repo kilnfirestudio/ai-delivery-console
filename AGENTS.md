@@ -77,8 +77,8 @@ npm run build    # tsc -b 类型检查 + vite 打包
 ## 验收流程
 
 1. agent 开 PR，CI 跑 lint、build 和 `!important` 检查。
-2. Claude（账号 `yxh77`）对照 v20 画板和 Issue 验收标准审查，在 PR 里留一条结论：**通过** / **需修改**（逐条列出）。agent 按留言修改并推到同一个分支，不要另开 PR。
-3. 被重新唤起修改时（例如所有者在 PR 里 @codex / @cursor），先读完 PR 里 `yxh77` 最新一条审查结论再动手。
+2. Claude（账号 `kilnfirestudio`，早期留言来自 `yxh77`）对照 v20 画板和 Issue 验收标准审查，在 PR 里留一条结论：**通过** / **需修改**（逐条列出）。**需修改**和 CI 失败的留言开头会直接 @ 对应 agent（按分支前缀：`codex/` → @codex，`cursor/` → @cursor）。agent 按留言修改并推到同一个分支，不要另开 PR。
+3. 被重新唤起修改时（例如所有者在 PR 里 @codex / @cursor），先读完 PR 里 Claude 最新一条审查结论再动手。
 4. 审查通过后由仓库所有者合并，合并后对应 Issue 自动关闭。
 
 ## 各工具的入口
