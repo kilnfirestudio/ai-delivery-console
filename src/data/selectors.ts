@@ -117,3 +117,56 @@ export const nextAttention = (d: ConsoleData, id?: string) => {
 
 /** Items in the 待审 queue (screenshots have their own page). */
 export const reviewQueue = (d: ConsoleData) => d.attention.filter((a) => a.group !== '看截图');
+
+// ───────────────────────── search (⌘K) ─────────────────────────
+
+export type SearchKind = '需求' | '子任务' | '知识' | '证据';
+
+export interface SearchResult {
+  /** Entity ID shown in mono, e.g. "TASK-0412", "T2", "K-027", "E-208". */
+  id: string;
+  kind: SearchKind;
+  title: string;
+  /** One-line context under the title. */
+  meta: string;
+  /** Existing `?item=` / `?id=` deep link to jump to. */
+  href: string;
+}
+
+/** The knowledge item that cites a piece of evidence, so evidence can jump somewhere that shows it. */
+const knowledgeCiting = (d: ConsoleData, evidenceId: string) =>
+  d.knowledge.find((k) => k.evidenceIds?.includes(evidenceId)) ?? d.knowledgeRecords.find((r) => r.evidence.some((e) => e.id === evidenceId));
+
+/** Rank: exact ID = 3, ID prefix = 2, ID contains = 1, title/meta only = 0. */
+const searchScore = (r: SearchResult, q: string) => {
+  const id = r.id.toLowerCase();
+  if (id === q) return 3;
+  if (id.startsWith(q)) return 2;
+  if (id.includes(q)) return 1;
+  return 0;
+};
+
+/**
+ * Everything the ⌘K palette can jump to, as a flat list: requirements, subtasks, knowledge and evidence.
+ * Matches an entity's ID or any text in its title/meta, case-insensitively, ID matches ranked first.
+ * Data comes from `src/data`; a real backend only swaps the source. An empty query returns a short
+ * default set so the palette is never blank.
+ */
+export const searchConsole = (d: ConsoleData, query: string, limit = 12): SearchResult[] => {
+  const all: SearchResult[] = [
+    ...d.requirements.map((r) => ({ id: r.id, kind: '需求' as const, title: r.title, meta: requirementSchedule(r), href: requirementHref(r.id) })),
+    ...d.subtasks.map((s) => ({ id: s.id, kind: '子任务' as const, title: s.title, meta: `${s.requirementId} · ${SUBTASK_STATE_LABEL[s.state]}`, href: taskHref(subtaskKey(s)) })),
+    ...d.knowledge.map((k) => ({ id: k.id, kind: '知识' as const, title: k.short, meta: `${k.scope} · ${k.level}`, href: knowledgeHref(k.id) })),
+    ...d.evidence.map((e) => {
+      const k = knowledgeCiting(d, e.id);
+      return { id: e.id, kind: '证据' as const, title: e.title, meta: [e.kind, e.date].filter(Boolean).join(' · '), href: k ? knowledgeHref(k.id) : '/knowledge' };
+    }),
+  ];
+  const q = query.trim().toLowerCase();
+  if (!q) return all.slice(0, limit);
+  const match = (r: SearchResult) => r.id.toLowerCase().includes(q) || r.title.toLowerCase().includes(q) || r.meta.toLowerCase().includes(q);
+  return all
+    .filter(match)
+    .sort((a, b) => searchScore(b, q) - searchScore(a, q))
+    .slice(0, limit);
+};

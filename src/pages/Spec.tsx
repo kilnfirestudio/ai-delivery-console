@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { R } from '../app/routes';
 import type { Agent } from '../data';
 import { AgentTimeline, LineChart, TIMELINE_LEGEND } from '../ui/charts';
+import CommandPalette from '../ui/CommandPalette';
 import { Checkbox, GuardedSwitch, SubtaskTile, Toggle } from '../ui/controls';
 import { GlassIcon, LineIcon, Radar, Robot, Sparkles, type IconName, type RobotState } from '../ui/icons';
 import { CheckpointBar, Chip, Col, DataTable, Grid, List, PageHeader, PageMain, Row, Section, SegControl } from '../ui/primitives';
@@ -311,6 +312,20 @@ function IconSection() {
   );
 }
 
+function CommandPaletteDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <button type="button" className="btn" onClick={() => setOpen(true)} aria-haspopup="dialog">
+        打开搜索
+        <span className="kbd">⌘K</span>
+      </button>
+      {muted('顶栏搜索框或 ⌘K / Ctrl+K 唤起，只用键盘即可完成搜索与跳转')}
+      <CommandPalette open={open} onClose={() => setOpen(false)} />
+    </div>
+  );
+}
+
 export default function Spec() {
   const hoverPrimary = { background: '#FAFAFA', borderColor: '#FAFAFA', color: '#08090A' };
   const hoverSecondary = { background: '#222327', borderColor: 'rgba(255,255,255,.18)', color: '#FFFFFF' };
@@ -485,6 +500,9 @@ export default function Spec() {
               ))}
             </div>
           </div>
+        </Section>
+        <Section id="cmdk-h" title="⌘K 全局搜索" sub="玻璃浮层，按编号或关键字搜需求 / 子任务 / 知识 / 证据；方向键选择，回车跳转，Esc 关闭">
+          <CommandPaletteDemo />
         </Section>
         <Section id="cf-h" title="图表" sub="细线、不做 3D、不加透视，保证读数准确">
           <LineChart values={[50, 54, 51, 53, 58, 61, 66, 70, 72, 75, 77, 78]} labels={['W34', 'W35', 'W36', 'W37', 'W38', 'W39', 'W40', 'W41', 'W42', 'W43', 'W44', 'W45']} base={52} baseLabel="基线 52%" lo={40} hi={90} unit="%" marker={4} markerLabel="阶段 1a" width={420} height={170} desc="扁平图表示例：一次通过率" />
