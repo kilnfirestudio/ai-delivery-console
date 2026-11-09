@@ -16,11 +16,11 @@ export const TINTS: Record<Tint, { base: string; light: string }> = {
 
 /**
  * Tint used for each page's title tile and other named tiles.
- * Mapping matches the v20 组件规范 board (Components.dc.html): one hue per page,
- * with Breakdown→indigo and Pipeline→teal taking the two tints added in F-07.
+ * Mapping matches the v20 组件规范 board (Components.dc.html).
+ * F-07 added the teal and indigo tints (Weekly→teal, Breakdown/Task→indigo).
  */
 export const ICON_TINT: Partial<Record<IconName, Tint>> = {
   Main: 'violet', Review: 'amber', Visual: 'cyan', Weekly: 'teal', Intake: 'green', Breakdown: 'indigo', Agents: 'violet',
-  Task: 'indigo', Knowledge: 'blue', Graph: 'violet', Clients: 'cyan', Metrics: 'green', Live: 'amber', Pipeline: 'teal',
+  Task: 'indigo', Knowledge: 'blue', Graph: 'violet', Clients: 'cyan', Metrics: 'green', Live: 'amber', Pipeline: 'cyan',
   Distribution: 'blue', Rules: 'violet', System: 'green', Components: 'violet', Bell: 'amber', Trophy: 'amber',
 };
