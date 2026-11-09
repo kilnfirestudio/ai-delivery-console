@@ -5,7 +5,7 @@ import { AgentTimeline, LineChart, TIMELINE_LEGEND } from '../ui/charts';
 import CommandPalette from '../ui/CommandPalette';
 import { Checkbox, GuardedSwitch, SubtaskTile, Toggle } from '../ui/controls';
 import { GlassIcon, LineIcon, Radar, Robot, Sparkles, type IconName, type RobotState } from '../ui/icons';
-import { CheckpointBar, Chip, Col, DataTable, Grid, List, PageHeader, PageMain, Row, Section, SegControl } from '../ui/primitives';
+import { CheckpointBar, Chip, Col, DataTable, EmptyState, ErrorState, Grid, List, PageHeader, PageMain, Row, Section, SegControl, Skeleton } from '../ui/primitives';
 
 /*
  * Component spec: every building block of the console with its states. Content here is sample copy that
@@ -506,6 +506,26 @@ export default function Spec() {
         </Section>
         <Section id="cf-h" title="图表" sub="细线、不做 3D、不加透视，保证读数准确">
           <LineChart values={[50, 54, 51, 53, 58, 61, 66, 70, 72, 75, 77, 78]} labels={['W34', 'W35', 'W36', 'W37', 'W38', 'W39', 'W40', 'W41', 'W42', 'W43', 'W44', 'W45']} base={52} baseLabel="基线 52%" lo={40} hi={90} unit="%" marker={4} markerLabel="阶段 1a" width={420} height={170} desc="扁平图表示例：一次通过率" />
+        </Section>
+        <Section id="cst-h" title="加载 / 空 / 出错" sub="按区块形状占位，不整页转圈；空和出错都说清原因和下一步。开发模式下用 ?data=loading|empty|error 预览">
+          <Grid min={240} gap={16} align="start">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p className="lbl" style={{ margin: 0 }}>加载骨架</p>
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <Skeleton height={28} width="55%" />
+                <Skeleton lines={3} />
+                <Skeleton height={64} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p className="lbl" style={{ margin: 0 }}>空状态</p>
+              <EmptyState icon="Knowledge" title="还没有知识条目" hint="agent 跑出候选、你确认后，知识会出现在这里。先去登记一个需求开始。" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p className="lbl" style={{ margin: 0 }}>出错</p>
+              <ErrorState detail="网关没有响应（示例）。数据源恢复后点重试。" onRetry={() => {}} />
+            </div>
+          </Grid>
         </Section>
       </Grid>
     </PageMain>

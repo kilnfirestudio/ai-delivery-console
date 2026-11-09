@@ -174,9 +174,13 @@ main > *:nth-child(2){animation-delay:60ms}main > *:nth-child(3){animation-delay
 /* Motion budget: looping motion is reserved for what needs you (tier1, blocking chips, waiting tiles).
    减少动态效果：停掉全部循环动画（入场动画也一并静止）。状态仍由静态颜色/阴影表达，不靠动画，所以不丢信息。
    SMIL 动画（机器人、雷达光点、星光、流动包）在 ui/icons.tsx 里按同一偏好单独关闭，CSS @media 管不到它们。 */
+/* 加载骨架：按区块形状占位，不用整页转圈。微光扫过提示"在载入"。 */
+.skel{background:#16171A;border-radius:8px;position:relative;overflow:hidden}
+.skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0,rgba(255,255,255,.06) 50%,transparent 100%);transform:translateX(-100%);animation:skel 1.4s var(--ease) infinite}
+@keyframes skel{to{transform:translateX(100%)}}
 @media (prefers-reduced-motion: reduce){
   main > *,.fill,.cp5 > span,.heat,.vbars > span,.vbars div > span:last-child,.vbars > .lastbar,.float,.glyph-swing,.scan,.pkt,.radar .sweep,.typing i,.nudge,
-  .tier1,.tile-you,.live::before,.shim,.nowline,.ants,.diffp,.relay,.breathe,.cu-loop,.pill-run::after,.flash td,.badge-pop,.badge-pop .gt::after{animation:none !important}
+  .tier1,.tile-you,.live::before,.shim,.nowline,.ants,.diffp,.relay,.breathe,.cu-loop,.pill-run::after,.flash td,.badge-pop,.badge-pop .gt::after,.skel::after{animation:none !important}
   .card:hover,.raised:hover,.tc:hover,.node:hover,.tile:hover{transform:none}
   .card:hover .gt,a:hover .gt{transform:none}
 }
