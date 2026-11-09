@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useData } from '../data';
 import { ATTENTION_TONE, attentionHref, reviewQueue, waitState } from '../data/selectors';
-import { Chip, PageHeader, PageMain, Rich } from '../ui/primitives';
+import { Chip, Note, PageHeader, PageMain, Rich } from '../ui/primitives';
 
 const GROUP_TONE = { 阻塞任务: 'risk', 需要你确认: 'you', 抽检与复验: 'queue', 看截图: 'you' } as const;
 
@@ -14,18 +14,21 @@ export default function Review() {
   const groups = [...new Set(queue.map((a) => a.group))].map((g) => ({ name: g, items: queue.filter((a) => a.group === g) }));
   const [params, setParams] = useSearchParams();
   const [handled, setHandled] = useState<string[]>([]);
+  const [reason, setReason] = useState('');
   const selected = queue.find((a) => a.id === params.get('item')) ?? queue.find((a) => a.kind === '候选') ?? queue[0];
   const select = (id: string) => setParams({ item: id }, { replace: true });
   /** Mark the selected item handled and move to the next open one. */
   const finish = () => {
     const done = [...handled, selected.id];
     setHandled(done);
+    setReason('');
     const order = [...queue.slice(queue.indexOf(selected) + 1), ...queue];
     const next = order.find((a) => !done.includes(a.id));
     if (next) select(next.id);
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       if ((e.target as HTMLElement).closest('input, textarea, select')) return;
       const i = queue.indexOf(selected);
       if (e.key === 'j' || e.key === 'ArrowDown') select(queue[Math.min(queue.length - 1, i + 1)].id);
@@ -148,9 +151,9 @@ export default function Review() {
               {selected.detail}
             </p>
             {selected.body && (
-              <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(248,81,73,.08)', fontSize: 14, lineHeight: 1.6 }}>
+              <Note kind="risk" style={{ fontSize: 14 }}>
                 <Rich text={selected.body} />
-              </div>
+              </Note>
             )}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,.08)' }}>
               {attentionHref(selected).startsWith('/review') ? (
@@ -185,10 +188,10 @@ export default function Review() {
               </p>
             </div>
             {cand.layer === 'L3' && (
-              <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(227,160,8,.08)', fontSize: 13, lineHeight: 1.6 }}>
+              <Note kind="warn">
                 <strong style={{ fontWeight: 600 }}>为什么到你这里：</strong>
                 它属于客户层知识。客户层、红线、跨项目上提、取代已验证的知识，这四类永远由你确认，委托规则不覆盖。
-              </div>
+              </Note>
             )}
             <div>
               <h3 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 600 }}>提议的字段</h3>
@@ -275,16 +278,29 @@ export default function Review() {
                 </ol>
               </div>
             )}
-            <form style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,.08)' }}>
+            <form style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,.08)' }} onSubmit={(e) => e.preventDefault()}>
               <label htmlFor="why" style={{ fontSize: 13, fontWeight: 600, paddingTop: 14 }}>
                 {overrides ? `覆盖 ${overrides.id} 的理由（必填）` : '确认说明（可选）'}
               </label>
-              <textarea id="why" rows={2} placeholder="例如：客户 A 主题沿用旧版断点，源码已确认" style={{ fontFamily: 'inherit', fontSize: 14, padding: '10px 12px', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, resize: 'vertical' }} />
+              <textarea
+                id="why"
+                rows={2}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                aria-required={overrides ? true : undefined}
+                placeholder="例如：客户 A 主题沿用旧版断点，源码已确认"
+                style={{ fontFamily: 'inherit', fontSize: 14, padding: '10px 12px', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, resize: 'vertical' }}
+              />
+              {overrides && !reason.trim() && (
+                <span className="overdue" style={{ fontSize: 12 }}>
+                  {`覆盖 ${overrides.id} 需要先写明理由才能确认`}
+                </span>
+              )}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <button className="btn btn-p" type="button" onClick={finish}>
+                <button className="btn btn-p" type="button" onClick={finish} disabled={overrides ? !reason.trim() : undefined}>
                   确认，下一件
                 </button>
-                <button className="btn" type="button">
+                <button className="btn" type="button" disabled={overrides ? !reason.trim() : undefined}>
                   修改字段后确认
                 </button>
                 <button className="btn" type="button" onClick={finish}>
