@@ -6,6 +6,7 @@ import CommandPalette from '../ui/CommandPalette';
 import { Checkbox, GuardedSwitch, SubtaskTile, Toggle } from '../ui/controls';
 import { GlassIcon, LineIcon, Radar, Robot, Sparkles, type IconName, type RobotState } from '../ui/icons';
 import { CheckpointBar, Chip, Col, DataTable, EmptyState, ErrorState, Grid, List, PageHeader, PageMain, Row, Section, SegControl, Skeleton } from '../ui/primitives';
+import { useReducedMotion } from '../ui/useReducedMotion';
 
 /*
  * Component spec: every building block of the console with its states. Content here is sample copy that
@@ -85,6 +86,7 @@ const lbl = (text: string, mb = 12) => (
 );
 
 function MotionSection() {
+  const still = useReducedMotion();
   const loopValues = (from: number, to: number, dur: string) => ({ values: `${from};${to};${to}`, keyTimes: '0;.55;1', dur, ...loop });
   return (
     <Section id="cmo-h" title="动效规范" sub="SVG 动画用原生 SMIL，HTML 动画用 CSS；不依赖脚本，导出和预览里都能播放">
@@ -93,10 +95,10 @@ function MotionSection() {
         <Demo name="折线绘入 · 1.3s" use="图表进入视野时从左画到右，末点弹出后持续呼吸">
           <svg width="150" height="56" viewBox="0 0 150 56" aria-hidden="true">
             <polyline points="4,46 26,40 48,42 70,30 92,32 114,18 146,10" fill="none" stroke="#9D8FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" pathLength={100} strokeDasharray="100">
-              <animate attributeName="stroke-dashoffset" {...loopValues(100, 0, '2.8s')} />
+              {!still && <animate attributeName="stroke-dashoffset" {...loopValues(100, 0, '2.8s')} />}
             </polyline>
             <circle cx="146" cy="10" r="3" fill="#B4A9FF">
-              <animate attributeName="r" values="0;0;4;3;3" keyTimes="0;.5;.6;.66;1" dur="2.8s" {...loop} />
+              {!still && <animate attributeName="r" values="0;0;4;3;3" keyTimes="0;.5;.6;.66;1" dur="2.8s" {...loop} />}
             </circle>
           </svg>
         </Demo>
@@ -112,7 +114,7 @@ function MotionSection() {
               ] as const
             ).map(([c, len, start], k) => (
               <circle key={c} cx="32" cy="32" r="24" fill="none" stroke={c} strokeWidth="8" pathLength={100} strokeDasharray={`${len} 100`} strokeDashoffset={-start} transform="rotate(-90 32 32)">
-                <animate attributeName="stroke-dasharray" values={`0 100;0 100;${len} 100;${len} 100`} keyTimes={`0;${(k * 0.15).toFixed(2)};${(k * 0.15 + 0.3).toFixed(2)};1`} dur="3s" {...loop} />
+                {!still && <animate attributeName="stroke-dasharray" values={`0 100;0 100;${len} 100;${len} 100`} keyTimes={`0;${(k * 0.15).toFixed(2)};${(k * 0.15 + 0.3).toFixed(2)};1`} dur="3s" {...loop} />}
               </circle>
             ))}
           </svg>
@@ -128,22 +130,24 @@ function MotionSection() {
             <rect x="2" y="12" width="26" height="16" rx="4" fill="#16171A" stroke="rgba(255,255,255,.12)" />
             <rect x="122" y="12" width="26" height="16" rx="4" fill="#16171A" stroke="rgba(124,108,255,.5)" />
             <line x1="30" y1="20" x2="120" y2="20" stroke="#3A3D44" strokeWidth="1.5" />
-            {['0s', '0.5s', '1s'].map((b) => (
-              <circle key={b} r="3" fill="#B4A9FF">
-                <animateMotion dur="1.5s" begin={b} path="M30 20 H120" {...loop} />
-                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.15;.8;1" dur="1.5s" begin={b} {...loop} />
-              </circle>
-            ))}
+            {!still &&
+              ['0s', '0.5s', '1s'].map((b) => (
+                <circle key={b} r="3" fill="#B4A9FF">
+                  <animateMotion dur="1.5s" begin={b} path="M30 20 H120" {...loop} />
+                  <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.15;.8;1" dur="1.5s" begin={b} {...loop} />
+                </circle>
+              ))}
           </svg>
         </Demo>
         <Demo name="选中涟漪 · 2s 循环" use="图谱里当前选中的节点、风险矩阵里交给你的事项">
           <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true">
-            {['0s', '0.8s', '1.6s'].map((b) => (
-              <circle key={b} cx="36" cy="36" r="10" fill="none" stroke="#B4A9FF" strokeWidth="1.5">
-                <animate attributeName="r" from="10" to="32" dur="2.4s" begin={b} {...loop} />
-                <animate attributeName="opacity" from=".9" to="0" dur="2.4s" begin={b} {...loop} />
-              </circle>
-            ))}
+            {!still &&
+              ['0s', '0.8s', '1.6s'].map((b) => (
+                <circle key={b} cx="36" cy="36" r="10" fill="none" stroke="#B4A9FF" strokeWidth="1.5">
+                  <animate attributeName="r" from="10" to="32" dur="2.4s" begin={b} {...loop} />
+                  <animate attributeName="opacity" from=".9" to="0" dur="2.4s" begin={b} {...loop} />
+                </circle>
+              ))}
             <circle cx="36" cy="36" r="9" fill="#7C6CFF" />
           </svg>
         </Demo>
@@ -212,6 +216,7 @@ function MotionSection() {
 }
 
 function IconSection() {
+  const still = useReducedMotion();
   const fx = (content: ReactNode, caption: string) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
       {content}
@@ -266,12 +271,14 @@ function IconSection() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <svg width="220" height="60" viewBox="0 0 220 60" aria-hidden="true">
             <path d="M10 50 C80 50 120 10 210 10" fill="none" stroke="#A99CFF" strokeWidth="2" strokeDasharray="5 7">
-              <animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" {...loop} />
+              {!still && <animate attributeName="stroke-dashoffset" from="24" to="0" dur="1s" {...loop} />}
             </path>
-            <circle r="3.5" fill="#E9E5FF">
-              <animateMotion dur="2s" path="M10 50 C80 50 120 10 210 10" {...loop} />
-              <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.88;1" dur="2s" {...loop} />
-            </circle>
+            {!still && (
+              <circle r="3.5" fill="#E9E5FF">
+                <animateMotion dur="2s" path="M10 50 C80 50 120 10 210 10" {...loop} />
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.88;1" dur="2s" {...loop} />
+              </circle>
+            )}
           </svg>
           {muted('流动虚线：证据 → 知识 → 产出')}
         </div>
