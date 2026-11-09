@@ -158,7 +158,7 @@ export default function Knowledge() {
         </p>
         <div style={{ overflowX: 'auto' }}>
           <div role="table" aria-label="近 8 周引用次数" style={{ minWidth: 1000, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <div role="row" style={{ display: 'grid', gridTemplateColumns: '340px repeat(8, 1fr) 72px', gap: 2, fontSize: 12, color: '#A1A6B0', fontWeight: 600 }}>
+            <div role="row" className="muted" style={{ display: 'grid', gridTemplateColumns: '340px repeat(8, 1fr) 72px', gap: 2, fontSize: 12, fontWeight: 600 }}>
               <span role="columnheader" style={{ padding: '4px 0' }}>
                 知识
               </span>
@@ -174,9 +174,7 @@ export default function Knowledge() {
             {heat.map((k) => (
               <div key={k.id} role="row" style={{ display: 'grid', gridTemplateColumns: '340px repeat(8, 1fr) 72px', gap: 2, alignItems: 'center' }}>
                 <Link role="rowheader" to={knowledgeHref(k.id)} style={{ fontSize: 13, color: '#EDEEF0', textDecoration: 'none', padding: '6px 8px 6px 0', lineHeight: 1.4 }}>
-                  <span className="mono" style={{ color: '#A1A6B0' }}>
-                    {k.id}
-                  </span>{' '}
+                  <span className="mono muted">{k.id}</span>{' '}
                   {k.short}
                 </Link>
                 {k.weeklyCitations.map((v, i) => {
