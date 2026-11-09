@@ -1,15 +1,18 @@
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { R } from '../app/routes';
 import { useData, type Lifecycle, type Tone } from '../data';
-import { Chip, PageHeader, PageMain } from '../ui/primitives';
+import { Chip, Note, PageHeader, PageMain } from '../ui/primitives';
 
 const LIFECYCLE_TONE: Record<Lifecycle, Tone> = { 候选: 'doing', 已确认: 'done', 可能过时: 'you', 已废弃: 'queue', 已取代: 'queue' };
 const EVIDENCE_TONE = { 支持: 'done', 条件来源: 'doing', 不构成反证: 'queue' } as const;
 const RESULT_TONE = { 进行中: 'doing', 一次通过: 'done', '返工 1 次': 'you' } as const;
-const HISTORY_DOT = { neutral: '#5C616B', you: '#6E5CF6', up: '#039855', flag: '#DC6803' } as const;
+// v20 时间线圆点用状态色：neutral→#5C616B，you→#6E5CF6，up→#3FB950（绿），flag→#E3A008（琥珀）
+const HISTORY_DOT = { neutral: '#5C616B', you: '#6E5CF6', up: '#3FB950', flag: '#E3A008' } as const;
 
 export default function KnowledgeItem() {
   const d = useData();
+  const [decision, setDecision] = useState<'agreed' | 'held' | null>(null);
   const [params] = useSearchParams();
   const id = params.get('id') ?? 'K-027';
   const k = d.knowledge.find((x) => x.id === id) ?? d.knowledge[0];
@@ -65,17 +68,27 @@ export default function KnowledgeItem() {
               <li key={r}>{r}</li>
             ))}
           </ul>
-          <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(227,160,8,.08)', fontSize: 13, lineHeight: 1.6 }}>
+          <Note kind="warn">
             <strong style={{ fontWeight: 600 }}>上提前先看：</strong>
             {rec.promotion.caution}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {['先复查当下条件', '同意上提', '暂不上提'].map((b) => (
-              <button key={b} className="btn" type="button">
-                {b}
+          </Note>
+          {decision ? (
+            <Chip tone={decision === 'agreed' ? 'done' : 'queue'} style={{ alignSelf: 'flex-start' }}>
+              {decision === 'agreed' ? `已同意上提到 ${rec.promotion.to}` : '已暂不上提'}
+            </Chip>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <button className="btn" type="button">
+                先复查当下条件
               </button>
-            ))}
-          </div>
+              <button className="btn" type="button" onClick={() => setDecision('agreed')}>
+                同意上提
+              </button>
+              <button className="btn" type="button" onClick={() => setDecision('held')}>
+                暂不上提
+              </button>
+            </div>
+          )}
         </section>
       )}
 
@@ -155,7 +168,7 @@ export default function KnowledgeItem() {
                       <div className="vbars" style={{ height: 110, display: 'flex', alignItems: 'flex-end', gap: 8, borderBottom: '1px solid rgba(255,255,255,.12)' }}>
                         {cites.map((v, i) => (
                           <div key={weeks[i]} title={`${weeks[i]} · 引用 ${v} 次`} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
-                            <span style={{ fontSize: 11, color: '#A1A6B0' }}>{i === cites.length - 1 ? v : ''}</span>
+                            <span className="muted" style={{ fontSize: 11 }}>{i === cites.length - 1 ? v : ''}</span>
                             <span style={{ width: '100%', maxWidth: 28, height: v ? Math.round((v / peak) * 84) : 0, background: '#7C6CFF', borderRadius: '4px 4px 0 0' }} />
                           </div>
                         ))}
