@@ -1,6 +1,7 @@
 import { useData, type ConsoleData } from '../data';
 import { formatNumber, reviewQueue } from '../data/selectors';
 import { Chip, DataTable, Grid, List, PageHeader, PageMain, Section } from '../ui/primitives';
+import { useReducedMotion } from '../ui/useReducedMotion';
 
 type Health = true | 'warn';
 
@@ -12,7 +13,7 @@ function warningDevices(d: ConsoleData) {
   return [...new Set([...unconnected, ...behind])];
 }
 
-function Box({ x, y, w, h, title, sub, ok = true, fill = 'url(#panel)', stroke = 'rgba(255,255,255,.09)', dashed, lines }: { x: number; y: number; w: number; h: number; title: string; sub?: string; ok?: Health; fill?: string; stroke?: string; dashed?: boolean; lines?: string[] }) {
+function Box({ x, y, w, h, title, sub, ok = true, fill = 'url(#panel)', stroke = 'rgba(255,255,255,.09)', dashed, lines, still }: { x: number; y: number; w: number; h: number; title: string; sub?: string; ok?: Health; fill?: string; stroke?: string; dashed?: boolean; lines?: string[]; still?: boolean }) {
   const dot = ok === true ? '#12B76A' : '#F79009';
   const dur = ok === 'warn' ? '1.1s' : '2.6s';
   const begin = `-${(((x + y) % 13) / 10).toFixed(1)}s`;
@@ -21,8 +22,8 @@ function Box({ x, y, w, h, title, sub, ok = true, fill = 'url(#panel)', stroke =
       <title>{`${title} · ${sub ?? ''}`}</title>
       <rect x={x} y={y} width={w} height={h} rx="10" fill={fill} stroke={stroke} strokeDasharray={dashed ? '5 4' : undefined} filter="url(#mod)" />
       <circle cx={x + 16} cy={y + 20} r="7.5" fill={dot} opacity=".22">
-        <animate attributeName="r" values={`5;${ok === 'warn' ? 11 : 8.5};5`} dur={dur} begin={begin} repeatCount="indefinite" />
-        <animate attributeName="opacity" values=".45;.08;.45" dur={dur} begin={begin} repeatCount="indefinite" />
+        {!still && <animate attributeName="r" values={`5;${ok === 'warn' ? 11 : 8.5};5`} dur={dur} begin={begin} repeatCount="indefinite" />}
+        {!still && <animate attributeName="opacity" values=".45;.08;.45" dur={dur} begin={begin} repeatCount="indefinite" />}
       </circle>
       <circle cx={x + 16} cy={y + 20} r="4.5" fill={dot} />
       <circle cx={x + 14.8} cy={y + 18.6} r="1.4" fill="#16171A" opacity=".7" />
@@ -41,21 +42,24 @@ function Box({ x, y, w, h, title, sub, ok = true, fill = 'url(#panel)', stroke =
   );
 }
 
-function Link({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
+function Link({ x1, y1, x2, y2, still }: { x1: number; y1: number; x2: number; y2: number; still?: boolean }) {
   const b = `${(((x1 * 3 + y1) % 11) / 10).toFixed(1)}s`;
   return (
     <>
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#5C616B" strokeWidth="1.5" markerEnd="url(#sa)" />
-      <circle r="2.8" fill="#B4A9FF">
-        <animateMotion dur="1.2s" begin={b} repeatCount="indefinite" path={`M${x1} ${y1} L${x2} ${y2 - 6}`} />
-        <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.2;.75;1" dur="1.2s" begin={b} repeatCount="indefinite" />
-      </circle>
+      {!still && (
+        <circle r="2.8" fill="#B4A9FF">
+          <animateMotion dur="1.2s" begin={b} repeatCount="indefinite" path={`M${x1} ${y1} L${x2} ${y2 - 6}`} />
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.2;.75;1" dur="1.2s" begin={b} repeatCount="indefinite" />
+        </circle>
+      )}
     </>
   );
 }
 
 /** Architecture status map; mirrors the architecture diagram in the design doc. */
 function ArchMap({ d }: { d: ConsoleData }) {
+  const still = useReducedMotion();
   const g = d.observation.gatewayToday;
   const sources = d.pipeline.sources;
   const srcWarn = sources.filter((s) => s.tone === 'you');
@@ -83,31 +87,31 @@ function ArchMap({ d }: { d: ConsoleData }) {
         <linearGradient id="gw" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#17142B" />
           <stop offset=".5" stopColor="#2A2452">
-            <animate attributeName="offset" values="0;1;0" dur="6s" repeatCount="indefinite" />
+            {!still && <animate attributeName="offset" values="0;1;0" dur="6s" repeatCount="indefinite" />}
           </stop>
           <stop offset="1" stopColor="#17142B" />
         </linearGradient>
       </defs>
-      <Box x={20} y={10} w={300} h={60} title="你 · UI" sub={`网页控制台 · 待审 ${reviewQueue(d).length} · 截图 ${shots}`} />
-      <Box x={350} y={10} w={300} h={60} title="采集层" sub={`${sources.length - 2} 类来源 · ${srcWarn.length} 个警告：Codex 云端`} ok={health(srcWarn.length > 0)} />
-      <Box x={680} y={10} w={300} h={60} title={`Agent · ${d.agents.length} 个身份`} sub={`活跃会话 ${g.activeSessions} · 零调用任务 ${zeroCall}`} ok={health(zeroCall > 0)} />
-      <Link x1={170} y1={72} x2={170} y2={106} />
-      <Link x1={500} y1={72} x2={500} y2={106} />
-      <Link x1={830} y1={72} x2={830} y2={106} />
-      <Box x={20} y={110} w={960} h={60} title="网关 · VPS" sub={`${d.workspace.gateway.online ? '在线' : '离线'} · p95 ${g.p95Ms} ms · 今天 ${formatNumber(g.calls)} 次调用 · 拒绝 ${g.rejected} · 超时 ${g.timeouts}（${g.timeoutWindow}）`} fill="url(#gw)" stroke="rgba(124,108,255,.5)" />
-      <Link x1={500} y1={172} x2={500} y2={196} />
+      <Box x={20} y={10} w={300} h={60} title="你 · UI" sub={`网页控制台 · 待审 ${reviewQueue(d).length} · 截图 ${shots}`} still={still} />
+      <Box x={350} y={10} w={300} h={60} title="采集层" sub={`${sources.length - 2} 类来源 · ${srcWarn.length} 个警告：Codex 云端`} ok={health(srcWarn.length > 0)} still={still} />
+      <Box x={680} y={10} w={300} h={60} title={`Agent · ${d.agents.length} 个身份`} sub={`活跃会话 ${g.activeSessions} · 零调用任务 ${zeroCall}`} ok={health(zeroCall > 0)} still={still} />
+      <Link x1={170} y1={72} x2={170} y2={106} still={still} />
+      <Link x1={500} y1={72} x2={500} y2={106} still={still} />
+      <Link x1={830} y1={72} x2={830} y2={106} still={still} />
+      <Box x={20} y={110} w={960} h={60} title="网关 · VPS" sub={`${d.workspace.gateway.online ? '在线' : '离线'} · p95 ${g.p95Ms} ms · 今天 ${formatNumber(g.calls)} 次调用 · 拒绝 ${g.rejected} · 超时 ${g.timeouts}（${g.timeoutWindow}）`} fill="url(#gw)" stroke="rgba(124,108,255,.5)" still={still} />
+      <Link x1={500} y1={172} x2={500} y2={196} still={still} />
       <rect x="20" y="200" width="960" height="150" rx="14" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.08)" />
       <line x1="34" y1="350.5" x2="966" y2="350.5" stroke="#101113" />
       <text x="36" y="222" fontSize="12" fontWeight="600" fill="#A1A6B0">
         存储层
       </text>
       {brief.map(([name, ...lines], i) => (
-        <Box key={name} x={36 + i * (bw + 10)} y={236} w={bw} h={96} title={name} dashed={name === '索引'} lines={lines} />
+        <Box key={name} x={36 + i * (bw + 10)} y={236} w={bw} h={96} title={name} dashed={name === '索引'} lines={lines} still={still} />
       ))}
-      <Link x1={250} y1={352} x2={250} y2={386} />
-      <Link x1={750} y1={352} x2={750} y2={386} />
-      <Box x={20} y={390} w={460} h={60} title="处理层" sub={`${d.system.processing.runsToday} 次运行 · 预算已用 ${usedPct}% · ${d.system.processing.note}`} />
-      <Box x={520} y={390} w={460} h={60} title="分发" sub={`热区 ${d.distribution.hotZones.length} 个项目 · ${behindDevices.length} 处落后：${behindDevices.join('、')}`} ok={health(behindDevices.length > 0)} />
+      <Link x1={250} y1={352} x2={250} y2={386} still={still} />
+      <Link x1={750} y1={352} x2={750} y2={386} still={still} />
+      <Box x={20} y={390} w={460} h={60} title="处理层" sub={`${d.system.processing.runsToday} 次运行 · 预算已用 ${usedPct}% · ${d.system.processing.note}`} still={still} />
+      <Box x={520} y={390} w={460} h={60} title="分发" sub={`热区 ${d.distribution.hotZones.length} 个项目 · ${behindDevices.length} 处落后：${behindDevices.join('、')}`} ok={health(behindDevices.length > 0)} still={still} />
     </svg>
   );
 }
