@@ -1,13 +1,40 @@
 import { Link } from 'react-router-dom';
 import { R } from '../app/routes';
 import { useData, type ErrorCause, type Tone } from '../data';
-import { reviewQueue } from '../data/selectors';
+import { reviewQueue, weeklyBadges, type WeeklyBadge } from '../data/selectors';
 import { Chip, DataTable, List, PageHeader, PageMain, Section, Stat, StatsGrid } from '../ui/primitives';
+import { TINTS } from '../ui/tints';
 
 const CAUSES: ErrorCause[] = ['知识缺失', '知识错误', '执行失误', '需求理解', '外部变化'];
 const CAUSE_TONE: Record<ErrorCause, Tone> = { 知识缺失: 'you', 知识错误: 'risk', 执行失误: 'queue', 需求理解: 'queue', 外部变化: 'queue' };
 const STEPS = ['看结果', '过错误', '处理知识', '调参', '记投入'];
-const GOOD = { color: '#56D364' };
+const GOOD = { color: TINTS.green.base };
+
+// Badge glyph paths (Lucide), drawn inside an F-07 glass tile with its gradient stroke — mirrors the v20 board.
+const BADGE_GLYPH: Record<WeeklyBadge['glyph'], string[]> = {
+  trophy: ['M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2', 'M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2', 'M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3', 'M4 22h16', 'M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z', 'M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3'],
+  check: ['M21.801 10A10 10 0 1 1 17 3.335', 'm9 11 3 3L22 4'],
+  'trend-down': ['M16 17h6v-6', 'm22 17-8.5-8.5-5 5L2 7'],
+  sprout: ['M7 20h10', 'M10 20c5.5-2.5.8-6.4 3-10', 'M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z', 'M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z'],
+};
+
+function BadgeCard({ badge }: { badge: WeeklyBadge }) {
+  return (
+    <div className="raised badge-pop" style={{ padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', minWidth: 0 }}>
+      <span className={`gt gt-${badge.tint}`} aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 11 }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={`url(#gs-${badge.tint})`} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          {BADGE_GLYPH[badge.glyph].map((dAttr) => (
+            <path key={dAttr} d={dAttr} />
+          ))}
+        </svg>
+      </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>{badge.title}</span>
+        <span className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>{badge.note}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function Weekly() {
   const d = useData();
@@ -24,6 +51,7 @@ export default function Weekly() {
   const maxCause = Math.max(...causeCount.map(([, n]) => n));
   const stale = d.knowledgeSummary.layers.reduce((s, l) => s + l.counts.可能过时, 0);
   const pct = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;
+  const badges = weeklyBadges(d);
 
   return (
     <PageMain>
@@ -43,6 +71,19 @@ export default function Weekly() {
           </ol>
         }
       />
+      {badges.length > 0 && (
+        <section aria-labelledby="wa-h" style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+            <h2 id="wa-h" className="lbl" style={{ margin: 0 }}>{`本周解锁 · ${badges.length}`}</h2>
+            <span className="muted" style={{ fontSize: 12 }}>只从本周真实结果里算出来，不是打卡</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            {badges.map((b) => (
+              <BadgeCard key={b.title} badge={b} />
+            ))}
+          </div>
+        </section>
+      )}
       <Section id="w1" title="1 · 本周结果" sub="和上周、和基线比">
         <StatsGrid
           min={150}
@@ -66,7 +107,7 @@ export default function Weekly() {
               <div key={c} style={{ display: 'grid', gridTemplateColumns: '72px 1fr 20px', gap: 8, alignItems: 'center', fontSize: 13 }}>
                 <span>{c}</span>
                 <div style={{ height: 12, background: 'rgba(255,255,255,.05)', borderRadius: 3 }}>
-                  <div className="fill" style={{ width: `${Math.round((n / maxCause) * 100)}%`, height: 12, background: '#6E5CF6', borderRadius: 3 }} />
+                  <div className="fill" style={{ width: `${Math.round((n / maxCause) * 100)}%`, height: 12, background: TINTS.violet.base, borderRadius: 3 }} />
                 </div>
                 <span style={{ textAlign: 'right' }}>{n}</span>
               </div>
@@ -91,7 +132,7 @@ export default function Weekly() {
             { label: '修订', value: w.knowledge.revised.length, note: w.knowledge.revised.join('、') },
             { label: '取代', value: w.knowledge.superseded.length, note: w.knowledge.superseded.join('、') },
             { label: '并入已有条目作证据', value: w.knowledge.merged },
-            { label: '待复验', value: w.knowledge.recheck.length, note: w.knowledge.recheck.join('、'), noteStyle: { color: '#F2C14E' } },
+            { label: '待复验', value: w.knowledge.recheck.length, note: w.knowledge.recheck.join('、'), noteStyle: { color: TINTS.amber.base } },
             { label: '零调用超 30 天', value: w.knowledge.idle30d },
           ]}
         />

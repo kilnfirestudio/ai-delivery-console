@@ -20,7 +20,7 @@ export const TINTS: Record<Tint, { base: string; light: string }> = {
  * with Breakdown→indigo and Pipeline→teal taking the two tints added in F-07.
  */
 export const ICON_TINT: Partial<Record<IconName, Tint>> = {
-  Main: 'violet', Review: 'amber', Visual: 'cyan', Weekly: 'rose', Intake: 'green', Breakdown: 'indigo', Agents: 'violet',
+  Main: 'violet', Review: 'amber', Visual: 'cyan', Weekly: 'teal', Intake: 'green', Breakdown: 'indigo', Agents: 'violet',
   Task: 'indigo', Knowledge: 'blue', Graph: 'violet', Clients: 'cyan', Metrics: 'green', Live: 'amber', Pipeline: 'teal',
   Distribution: 'blue', Rules: 'violet', System: 'green', Components: 'violet', Bell: 'amber', Trophy: 'amber',
 };
