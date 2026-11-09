@@ -1,38 +1,57 @@
+import { useState } from 'react';
 import { useData, type ScreenshotDiff } from '../data';
 import { agentById, findSubtask } from '../data/selectors';
-import { Chip, Col, List, PageHeader, PageMain, Row, Section, SegControl } from '../ui/primitives';
+import { Chip, Col, List, PageHeader, PageMain, Row, Section } from '../ui/primitives';
 
 const VERDICT = { 预期: ['done', '#8DB6FF'], 意外: ['risk', '#FF7B72'], 噪声: ['queue', '#A1A6B0'] } as const;
 const block = (h: number, bg = 'rgba(255,255,255,.14)') => <span style={{ height: h, background: bg, borderRadius: 4 }} />;
+
+/** Local stateful segmented control (shared SegControl has no handler and src/ui is out of scope). */
+function Seg({ label, options, value, onChange }: { label: string; options: string[]; value: number; onChange: (i: number) => void }) {
+  return (
+    <div className="seg" role="group" aria-label={label}>
+      {options.map((o, i) => (
+        <button key={o} type="button" aria-pressed={i === value} onClick={() => onChange(i)}>
+          {o}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function Badge({ n, color }: { n: number; color: string }) {
   return <span style={{ position: 'absolute', top: -10, left: -10, width: 20, height: 20, borderRadius: 10, background: color, color: '#FFFFFF', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n}</span>;
 }
 
-/** Stylised phone screenshot; `diffs` marks the changed regions of the new version. */
-function Phone({ label, diffs }: { label: string; diffs?: ScreenshotDiff[] }) {
-  const changed = !!diffs;
+/**
+ * Stylised phone screenshot. `changed` switches the body to the two-column layout;
+ * `diffs` (when present) overlays the changed-region boxes and the scanning line.
+ * `dim` fades the static scaffold so only the diff regions stand out ("只看差异").
+ */
+function Phone({ label, changed, diffs, dim }: { label: string; changed?: boolean; diffs?: ScreenshotDiff[]; dim?: boolean }) {
   return (
     <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
       <div style={{ width: 200, height: 380, padding: 8, boxSizing: 'border-box', borderRadius: 32, background: 'linear-gradient(145deg, #34373D, #121417)', boxShadow: '0 16px 32px rgba(16,24,40,.28), 0 2px 4px rgba(16,24,40,.2), inset 0 1px 0 rgba(255,255,255,.15)' }}>
         <div style={{ position: 'relative', height: '100%', borderRadius: 24, background: '#16171A', padding: '14px 12px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 8, overflow: 'hidden' }}>
-          <span style={{ height: 12, width: '60%', background: 'rgba(255,255,255,.08)', borderRadius: 3 }} />
-          {block(70, 'rgba(255,255,255,.08)')}
-          {changed ? (
-            <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {block(60)}
-              {block(60)}
-              {block(60)}
-              {block(60)}
-            </span>
-          ) : (
-            <span style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {block(60)}
-              {block(60)}
-            </span>
-          )}
-          <span style={{ marginTop: changed ? 22 : 30, height: 30, background: 'rgba(255,255,255,.05)', borderRadius: 4 }} />
-          {changed && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, opacity: dim ? 0.25 : 1, transition: 'opacity 150ms' }}>
+            <span style={{ height: 12, width: '60%', background: 'rgba(255,255,255,.08)', borderRadius: 3 }} />
+            {block(70, 'rgba(255,255,255,.08)')}
+            {changed ? (
+              <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {block(60)}
+                {block(60)}
+                {block(60)}
+                {block(60)}
+              </span>
+            ) : (
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {block(60)}
+                {block(60)}
+              </span>
+            )}
+            <span style={{ marginTop: changed ? 22 : 30, height: 30, background: 'rgba(255,255,255,.05)', borderRadius: 4 }} />
+          </div>
+          {diffs && (
             <>
               <span title={`差异 1：${diffs[0]?.text}`} style={{ position: 'absolute', left: 6, right: 6, top: 118, height: 132, border: '2px solid #6E5CF6', borderRadius: 4, background: 'rgba(37,99,235,0.06)' }}>
                 <Badge n={1} color="#6E5CF6" />
@@ -59,6 +78,10 @@ export default function Visual() {
   const req = d.requirements.find((r) => r.id === s?.requirementId);
   const project = d.projects.find((p) => p.id === req?.projectId);
   const waited = d.attention.find((x) => x.kind === '看截图' && x.refs?.subtask === pending?.subtask)?.waitedMin;
+
+  const devices = pending?.devices ?? [];
+  const [device, setDevice] = useState(0);
+  const [mode, setMode] = useState(0); // 0 并排 · 1 叠加 · 2 只看差异
 
   return (
     <PageMain>
@@ -93,12 +116,18 @@ export default function Visual() {
           <Col flex="1 1 640px">
             <Section id="vm-h" title={`${s.id} · ${s.title}`} sub={`${project?.short} · ${a?.name} · ${a?.tool} · 文件范围 ${s.files?.join(' ')} · 检查点 ${s.checkpoint} / 5`} right={<Chip tone="you">待你看</Chip>}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between', marginBottom: 18 }}>
-                <SegControl label="设备" options={pending.devices?.map((x) => `${x.name} · ${x.diffPct}%`) ?? []} />
-                <SegControl label="比对方式" options={['并排', '叠加', '只看差异']} />
+                <Seg label="设备" options={devices.map((x) => `${x.name} · ${x.diffPct}%`)} value={device} onChange={setDevice} />
+                <Seg label="比对方式" options={['并排', '叠加', '只看差异']} value={mode} onChange={setMode} />
               </div>
               <div className="well" style={{ display: 'flex', flexWrap: 'wrap', gap: 48, justifyContent: 'center', padding: 24, borderRadius: 12 }}>
-                <Phone label={`基准 · ${pending.baseline}`} />
-                <Phone label={`本次 · ${s.id}`} diffs={pending.diffs} />
+                {mode === 0 && (
+                  <>
+                    <Phone label={`基准 · ${pending.baseline}`} />
+                    <Phone label={`本次 · ${s.id}`} changed diffs={pending.diffs} />
+                  </>
+                )}
+                {mode === 1 && <Phone label={`叠加 · 基准 ↔ ${s.id}`} changed diffs={pending.diffs} />}
+                {mode === 2 && <Phone label={`只看差异 · ${s.id}`} changed diffs={pending.diffs} dim />}
               </div>
             </Section>
             <Section id="vd-h" title={`差异 · ${pending.diffs?.length ?? 0} 处`} sub="按“是否在文件范围内”自动初判，最终由你决定">
