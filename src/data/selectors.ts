@@ -170,3 +170,42 @@ export const searchConsole = (d: ConsoleData, query: string, limit = 12): Search
     .sort((a, b) => searchScore(b, q) - searchScore(a, q))
     .slice(0, limit);
 };
+
+// ───────────────────────── weekly review ─────────────────────────
+
+/** One "unlocked this week" achievement badge. `glyph` names the inline SVG the page draws; only the hardest badge is amber. */
+export interface WeeklyBadge {
+  glyph: 'trophy' | 'check' | 'trend-down' | 'sprout';
+  tint: 'amber' | 'green' | 'blue' | 'violet';
+  title: string;
+  note: string;
+}
+
+/** Streak of weeks (up to this week) with zero repeated errors. */
+const zeroRepeatStreak = (d: ConsoleData) => {
+  const v = d.observation.coreMetrics.find((m) => m.id === 'repeats')?.values ?? [];
+  let n = 0;
+  while (n < v.length && v[v.length - 1 - n] === 0) n += 1;
+  return n;
+};
+
+/**
+ * Achievements unlocked this week, all derived from real weekly numbers (nothing hard-coded).
+ * A badge only appears when its result actually holds; the amber "no repeated mistakes" badge is the
+ * hardest and leads when present. Used by the 每周复盘 page's 「本周解锁」 block.
+ */
+export const weeklyBadges = (d: ConsoleData): WeeklyBadge[] => {
+  const metric = (id: string) => d.observation.coreMetrics.find((m) => m.id === id);
+  const firstPass = metric('firstPass');
+  const last = (id: string) => { const m = metric(id); return m ? m.values[m.values.length - 1] : 0; };
+  const { reworks, effort } = d.weeklyReview;
+  const streak = zeroRepeatStreak(d);
+  const fp = last('firstPass');
+  const fpBase = firstPass?.base ?? 0;
+  const badges: WeeklyBadge[] = [];
+  if (streak > 0) badges.push({ glyph: 'trophy', tint: 'amber', title: '同样的错误没再犯', note: `重复错误连续 ${streak} 周为 0` });
+  if (fp > fpBase) badges.push({ glyph: 'check', tint: 'green', title: `一次通过 ${fp}%`, note: `比基线 ${fpBase}% 高 ${fp - fpBase} 个点` });
+  if (reworks.now < reworks.base) badges.push({ glyph: 'trend-down', tint: 'blue', title: `返工降到 ${reworks.now} 轮`, note: `上周 ${reworks.last} 轮，基线 ${reworks.base} 轮` });
+  if (effort.ratioWeeksBelow1 > 0) badges.push({ glyph: 'sprout', tint: 'violet', title: '知识库开始回本', note: `投入小于产出，连续 ${effort.ratioWeeksBelow1} 周` });
+  return badges;
+};
