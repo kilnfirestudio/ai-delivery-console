@@ -10,6 +10,7 @@ import { AgentTimeline, Donut, Gauge, Spark, TIMELINE_LEGEND, type DonutPart } f
 import { SubtaskTile } from '../ui/controls';
 import { GlassIcon, LineIcon, Robot, Sparkles, type IconName } from '../ui/icons';
 import { ButtonLink, Chip, CountUp, Label, Legend, List, PageHeader, PageMain, Section, SegControl, TextLink } from '../ui/primitives';
+import { PageState, SkelCard, SkelCards, SkelList, SkelSection, SkelStats } from './_states';
 import { TINTS } from '../ui/tints';
 
 // 排队灰 #5C616B（画布 v20）：tints.ts 没有中性灰、src/ui 是 F-07 定稿不改，这一处单独命名，避免散落的内联十六进制。
@@ -467,11 +468,26 @@ export default function Overview() {
         }
         right={<SegControl label="按项目筛选" options={['全部项目', ...d.projects.map((p) => p.short)]} />}
       />
+      <PageState
+        emptyTitle="今天没有待办"
+        emptyHint="需要你处理的事、进行中的任务和本周效果都会出现在这里。"
+        emptyIcon="Main"
+        skeleton={
+          <>
+            <SkelSection><SkelCard title={false} height={200} /></SkelSection>
+            <SkelCards count={4} min={240} height={120} />
+            <SkelSection><SkelList rows={4} /></SkelSection>
+            <SkelSection><SkelCard title={false} height={200} /></SkelSection>
+            <SkelSection><SkelStats count={4} min={240} /></SkelSection>
+          </>
+        }
+      >
       <NeedsYou d={d} />
       <TodayRow d={d} />
       <BreakdownMap d={d} />
       <TimelineSection d={d} />
       <Kpis d={d} />
+      </PageState>
     </PageMain>
   );
 }

@@ -4,6 +4,7 @@ import { AGENT_ROBOT, AGENT_STATUS_LABEL, AGENT_STATUS_TONE, agentNow, countAgen
 import { AgentTimeline, TIMELINE_LEGEND } from '../ui/charts';
 import { Robot } from '../ui/icons';
 import { CheckpointBar, Chip, Label, PageHeader, PageMain, Section } from '../ui/primitives';
+import { PageState, SkelCard, SkelCards, SkelSection, SkelStats } from './_states';
 
 const EMPTY_CARD = { background: 'transparent', borderStyle: 'dashed' } as const;
 
@@ -134,6 +135,19 @@ export default function Agents() {
           </>
         }
       />
+      <PageState
+        emptyTitle="还没有 agent"
+        emptyHint="网关登记身份后，每个 agent 的时间轴和看板会出现在这里。"
+        emptyIcon="Agents"
+        isEmpty={d.agents.length === 0}
+        skeleton={
+          <>
+            <SkelSection><SkelCard title={false} height={180} /></SkelSection>
+            <SkelSection><SkelStats count={5} min={160} /></SkelSection>
+            <SkelCards count={6} min={300} lines={6} />
+          </>
+        }
+      >
       <Section id="atl-h" title="今日时间轴" sub="并行情况一眼看清：蓝色在做，橙色在等你，空白是空闲" right={TIMELINE_LEGEND}>
         <AgentTimeline lanes={d.agents.map((a) => ({ agent: a, now: agentNow(d, a) }))} now={d.workspace.now} />
       </Section>
@@ -160,6 +174,7 @@ export default function Agents() {
           <AgentLane key={a.id} d={d} a={a} />
         ))}
       </div>
+      </PageState>
     </PageMain>
   );
 }

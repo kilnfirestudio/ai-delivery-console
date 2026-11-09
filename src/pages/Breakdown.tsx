@@ -4,6 +4,7 @@ import { R } from '../app/routes';
 import { CHECKPOINTS, CHECKPOINT_EVIDENCE, DELIVERY_STEPS, useData, type Subtask } from '../data';
 import { agentById, attentionHref, nextCheckpoint, SUBTASK_STATE_LABEL, subtaskKey, subtasksOf, taskHref } from '../data/selectors';
 import { CheckpointBar, Chip, PageHeader, PageMain } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection, SkelTable } from './_states';
 
 const COLS = '56px minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr) 70px 96px 170px';
 const ARROW = (
@@ -61,6 +62,22 @@ export default function Breakdown() {
         }
       />
 
+      <PageState
+        emptyTitle="还没有拆解的需求"
+        emptyHint="登记需求并由客户确认后，交付流程、拆分依赖和子任务会出现在这里。"
+        emptyIcon="Breakdown"
+        skeleton={
+          <>
+            <SkelSection><SkelCard title={false} height={120} /></SkelSection>
+            <SkelSection><SkelCard title={false} height={180} /></SkelSection>
+            <SkelSection><SkelTable rows={5} cols={8} /></SkelSection>
+            <SkelRow min={520}>
+              <SkelSection><SkelList rows={4} /></SkelSection>
+              <SkelSection><SkelList rows={4} /></SkelSection>
+            </SkelRow>
+          </>
+        }
+      >
       {req.stepLog && (
         <section className="card" aria-labelledby="flow-h">
           <h2 id="flow-h" style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600 }}>
@@ -284,6 +301,7 @@ export default function Breakdown() {
           </section>
         )}
       </div>
+      </PageState>
     </PageMain>
   );
 }

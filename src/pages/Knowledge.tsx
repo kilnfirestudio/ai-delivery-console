@@ -3,6 +3,7 @@ import { R } from '../app/routes';
 import { useData, type Credibility, type KnowledgeItem } from '../data';
 import { knowledgeHref } from '../data/selectors';
 import { PageHeader, PageMain, Chip } from '../ui/primitives';
+import { PageState, SkelCards, SkelSection, SkelStats, SkelTable } from './_states';
 
 const CRED_COLOR: Record<Credibility, string> = { 已验证: '#B4A9FF', 初步验证: '#7C6CFF', 假设: '#4A4560' };
 const LAYER_COLS = 'minmax(0, 1.6fr) 70px 60px 80px 70px 70px 300px 110px';
@@ -52,6 +53,19 @@ export default function Knowledge() {
           </p>
         }
       />
+      <PageState
+        emptyTitle="知识库还是空的"
+        emptyHint="确认候选、积累证据后，分层统计、引用热度和需要处理的信号会出现在这里。"
+        emptyIcon="Knowledge"
+        skeleton={
+          <>
+            <SkelStats count={6} min={170} />
+            <SkelSection><SkelTable rows={4} cols={8} /></SkelSection>
+            <SkelSection><SkelTable rows={6} cols={9} /></SkelSection>
+            <SkelCards count={3} min={300} lines={5} />
+          </>
+        }
+      >
       <section aria-label="知识数量" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 16 }}>
         {stats.map((st) => (
           <div key={st.label} className="card" style={{ padding: '16px 18px' }}>
@@ -225,6 +239,7 @@ export default function Knowledge() {
           ))}
         </div>
       </section>
+      </PageState>
     </PageMain>
   );
 }

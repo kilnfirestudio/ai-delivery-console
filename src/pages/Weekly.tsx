@@ -3,6 +3,7 @@ import { R } from '../app/routes';
 import { useData, type ErrorCause, type Tone } from '../data';
 import { reviewQueue, weeklyBadges, type WeeklyBadge } from '../data/selectors';
 import { Chip, DataTable, List, PageHeader, PageMain, Section, Stat, StatsGrid } from '../ui/primitives';
+import { PageState, SkelCard, SkelSection, SkelStats, SkelTable } from './_states';
 import { TINTS } from '../ui/tints';
 
 const CAUSES: ErrorCause[] = ['知识缺失', '知识错误', '执行失误', '需求理解', '外部变化'];
@@ -71,6 +72,19 @@ export default function Weekly() {
           </ol>
         }
       />
+      <PageState
+        emptyTitle="还没有本周数据"
+        emptyHint="一周结束后，结果、返工错误、知识变化和投入会汇总在这里。"
+        emptyIcon="Weekly"
+        skeleton={
+          <>
+            <SkelSection><SkelStats count={8} min={150} /></SkelSection>
+            <SkelSection><SkelTable rows={4} cols={4} /></SkelSection>
+            <SkelSection><SkelStats count={6} min={140} /></SkelSection>
+            <SkelSection><SkelCard title={false} height={160} /></SkelSection>
+          </>
+        }
+      >
       {badges.length > 0 && (
         <section aria-labelledby="wa-h" style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
@@ -182,6 +196,7 @@ export default function Weekly() {
           </button>
         </div>
       </Section>
+      </PageState>
     </PageMain>
   );
 }

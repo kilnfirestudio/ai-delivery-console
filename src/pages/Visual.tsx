@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useData, type ScreenshotDiff } from '../data';
 import { agentById, findSubtask } from '../data/selectors';
 import { Chip, Col, List, PageHeader, PageMain, Row, Section } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection } from './_states';
 
 const VERDICT = { 预期: ['done', '#8DB6FF'], 意外: ['risk', '#FF7B72'], 噪声: ['queue', '#A1A6B0'] } as const;
 const block = (h: number, bg = 'rgba(255,255,255,.14)') => <span style={{ height: h, background: bg, borderRadius: 4 }} />;
@@ -86,6 +87,18 @@ export default function Visual() {
   return (
     <PageMain>
       <PageHeader icon="Visual" title="截图审核" sub="看每个子任务的截图，以及合并后的回归差异。差异区域自动框出，你只需要判断“是不是预期的”" />
+      <PageState
+        emptyTitle="没有待看的截图"
+        emptyHint="子任务提交截图、合并产生回归差异后，会在这里排队等你看。"
+        emptyIcon="Visual"
+        isEmpty={d.visualReviews.length === 0}
+        skeleton={
+          <SkelRow min={340}>
+            <SkelSection><SkelList rows={4} /></SkelSection>
+            <SkelSection><SkelCard title={false} height={420} /></SkelSection>
+          </SkelRow>
+        }
+      >
       <Row>
         <Col flex="0 1 340px">
           <Section id="vq-h" title="队列" sub="你的两个检查点：子任务截图、合并后的回归差异">
@@ -167,6 +180,7 @@ export default function Visual() {
           </Col>
         )}
       </Row>
+      </PageState>
     </PageMain>
   );
 }

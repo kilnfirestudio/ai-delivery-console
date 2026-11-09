@@ -4,6 +4,7 @@ import { R } from '../app/routes';
 import { CHECKPOINTS, useData, type ConsoleData, type ConstraintLevel, type KnowledgeItem, type TaskDetail, type TaskEventType, type Tone } from '../data';
 import { agentById, attentionHref, findSubtask, LEVEL_TONE, nextAttention, requirementHref, SUBTASK_STATE_LABEL, waitState } from '../data/selectors';
 import { CheckpointBar, Chip, PageHeader, PageMain, Rich } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection } from './_states';
 
 const EVENT_STYLE: Record<TaskEventType, [Tone, string]> = {
   领取: ['queue', '#5C616B'],
@@ -146,6 +147,21 @@ export default function Task() {
           </div>
         }
       />
+
+      <PageState
+        emptyTitle="没有这个任务"
+        emptyHint="从总览或看板打开一个子任务，这里会显示它的完成度、事件时间线和追溯图。"
+        emptyIcon="Task"
+        skeleton={
+          <>
+            <SkelRow min={480}>
+              <SkelSection><SkelList rows={5} /></SkelSection>
+              <SkelSection><SkelList rows={5} /></SkelSection>
+            </SkelRow>
+            <SkelSection><SkelCard title={false} height={260} /></SkelSection>
+          </>
+        }
+      >
 
       {t?.help && help && (
         <section aria-labelledby="help-h" style={{ background: 'rgba(227,160,8,.06)', border: `1px solid ${wait.overdue ? 'rgba(248,81,73,.55)' : 'rgba(227,160,8,.45)'}`, borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -442,6 +458,7 @@ export default function Task() {
           </div>
         </section>
       )}
+      </PageState>
     </PageMain>
   );
 }

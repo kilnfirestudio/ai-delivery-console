@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { R } from '../app/routes';
 import { useData, type Lifecycle, type Tone } from '../data';
 import { Chip, Note, PageHeader, PageMain } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection } from './_states';
 
 const LIFECYCLE_TONE: Record<Lifecycle, Tone> = { 候选: 'doing', 已确认: 'done', 可能过时: 'you', 已废弃: 'queue', 已取代: 'queue' };
 const EVIDENCE_TONE = { 支持: 'done', 条件来源: 'doing', 不构成反证: 'queue' } as const;
@@ -52,6 +53,18 @@ export default function KnowledgeItem() {
           {version && <Chip>{version}</Chip>}
         </div>
       </div>
+
+      <PageState
+        emptyTitle="没有这条知识"
+        emptyHint="从知识库或图谱里打开一条知识，这里会显示它的字段、证据和使用情况。"
+        emptyIcon="Knowledge"
+        skeleton={
+          <SkelRow min={520}>
+            <SkelSection><SkelList rows={8} /></SkelSection>
+            <SkelSection><SkelCard title={false} height={220} /></SkelSection>
+          </SkelRow>
+        }
+      >
 
       {rec?.promotion && (
         <section aria-labelledby="up-h" style={{ background: '#16171A', border: '1px solid rgba(124,108,255,.5)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -242,6 +255,7 @@ export default function KnowledgeItem() {
           </div>
         </div>
       )}
+      </PageState>
     </PageMain>
   );
 }
