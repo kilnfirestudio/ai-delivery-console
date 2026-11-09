@@ -5,7 +5,7 @@ import { AgentTimeline, TIMELINE_LEGEND } from '../ui/charts';
 import { Robot } from '../ui/icons';
 import { CheckpointBar, Chip, Label, PageHeader, PageMain, Section } from '../ui/primitives';
 
-const EMPTY_CARD = { background: 'transparent', borderStyle: 'dashed', color: '#A1A6B0' } as const;
+const EMPTY_CARD = { background: 'transparent', borderStyle: 'dashed' } as const;
 
 function ActiveCard({ d, a }: { d: ConsoleData; a: Agent }) {
   const s = a.activeSubtask ? findSubtask(d, a.activeSubtask) : undefined;
@@ -36,7 +36,9 @@ function ActiveCard({ d, a }: { d: ConsoleData; a: Agent }) {
       <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.5 }}>{s.title}</span>
       <CheckpointBar passed={s.checkpoint} tone={you ? 'you' : 'doing'} label={`${s.id} 检查点 ${s.checkpoint} / 5`} />
       <span style={{ fontSize: 12 }}>{`检查点 ${s.checkpoint} / 5 · ${nextCheckpoint(s)}`}</span>
-      <span style={{ fontSize: 12, lineHeight: 1.5, ...(you ? { color: '#F2C14E', fontWeight: 500 } : { color: '#A1A6B0' }) }}>{a.activeNote}</span>
+      <span className={you ? 's-you' : 'muted'} style={{ fontSize: 12, lineHeight: 1.5, ...(you ? { background: 'none', fontWeight: 500 } : {}) }}>
+        {a.activeNote}
+      </span>
     </Link>
   );
 }
