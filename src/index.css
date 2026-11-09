@@ -29,3 +29,62 @@
   top: 0;
   z-index: 20;
 }
+
+/* The hamburger only shows on narrow screens; the scrim is hidden until the drawer opens. */
+.nav-toggle { display: none; }
+.scrim { display: none; }
+
+/* ≤768px: single column, sidebar becomes an off-canvas drawer toggled by .app[data-drawer]. */
+@media (max-width: 768px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+
+  /* Keep any over-wide block (timelines, wide tables) inside the viewport; those blocks carry their
+     own overflow-x:auto container, so content is reachable by scrolling the block, not the page. */
+  .app-content { overflow-x: hidden; }
+  .app-content > main { max-width: 100vw; overflow-x: hidden; padding-left: 16px; padding-right: 16px; box-sizing: border-box; }
+
+  .app > aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 264px;
+    max-width: 82vw;
+    height: 100vh;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
+    box-shadow: 0 0 40px rgba(0, 0, 0, .5);
+  }
+  .app[data-drawer] > aside { transform: none; }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(0, 0, 0, .5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms;
+  }
+  .app[data-drawer] .scrim { opacity: 1; pointer-events: auto; }
+
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+  }
+
+  .app-content > header { padding: 0 12px; gap: 8px; }
+
+  /* Touch targets ≥44px on phones (desktop keeps the board's 34px). */
+  .app-content .btn { min-height: 44px; }
+  .nav-toggle { width: 44px; height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app > aside, .scrim { transition: none; }
+}
