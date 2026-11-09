@@ -1,6 +1,7 @@
 import { useData, type ConsoleData } from '../data';
 import { formatNumber, reviewQueue } from '../data/selectors';
 import { Chip, DataTable, Grid, List, PageHeader, PageMain, Section } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection, SkelTable } from './_states';
 import { useReducedMotion } from '../ui/useReducedMotion';
 
 type Health = true | 'warn';
@@ -128,6 +129,22 @@ export default function System() {
   return (
     <PageMain>
       <PageHeader icon="System" title="系统健康" sub="VPS 承载网关、UI 和处理层。这一页只在出问题时需要看" right={warnings ? <Chip tone="you">{`${warnings} 个警告`}</Chip> : <Chip tone="done">正常</Chip>} />
+      <PageState
+        emptyTitle="没有系统数据"
+        emptyHint="架构状态、存储和演练记录会在系统接入后出现在这里。"
+        emptyIcon="System"
+        skeleton={
+          <>
+            <SkelSection><SkelCard title={false} height={300} /></SkelSection>
+            <SkelSection><SkelTable rows={4} cols={6} /></SkelSection>
+            <SkelRow min={300}>
+              <SkelSection><SkelList rows={3} /></SkelSection>
+              <SkelSection><SkelList rows={3} /></SkelSection>
+              <SkelSection><SkelList rows={3} /></SkelSection>
+            </SkelRow>
+          </>
+        }
+      >
       <Section id="sa-h" title="架构状态" sub="和文档里的架构图一一对应；橙点是警告，悬停看详情">
         <ArchMap d={d} />
       </Section>
@@ -139,6 +156,7 @@ export default function System() {
         {block('sr-h', '恢复演练', s.recovery)}
         {block('sv-h', '格式版本', s.formats)}
       </Grid>
+      </PageState>
     </PageMain>
   );
 }

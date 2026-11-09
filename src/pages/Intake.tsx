@@ -1,6 +1,7 @@
 import { Fragment, useRef, useState } from 'react';
 import { useData } from '../data';
 import { Chip, Col, Grid, List, Note, PageHeader, PageMain, Row, Section } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection } from './_states';
 
 function StepsBar({ names, current, onStep }: { names: string[]; current: number; onStep: (i: number) => void }) {
   return (
@@ -235,6 +236,23 @@ export default function Intake() {
         sub={`把客户原话交给系统，拆分要等客户确认需求单之后。示例是 ${req.registeredAt} 登记 ${req.id} 时的样子`}
         right={<StepsBar names={['登记', '确认', '拆分']} current={step} onStep={(i) => (i <= step || !rawEmpty ? setStep(i) : (setTried(true), rawRef.current?.focus()))} />}
       />
+      <PageState
+        emptyTitle="还没有登记记录"
+        emptyHint="把客户原话交给系统后，登记表单、确认单草稿和检索到的知识会出现在这里。"
+        emptyIcon="Intake"
+        skeleton={
+          <>
+            <SkelRow min={420}>
+              <SkelSection><SkelCard title={false} height={320} /></SkelSection>
+              <SkelSection><SkelCard title={false} height={320} /></SkelSection>
+            </SkelRow>
+            <SkelRow min={420}>
+              <SkelSection><SkelList rows={3} /></SkelSection>
+              <SkelSection><SkelList rows={3} /></SkelSection>
+            </SkelRow>
+          </>
+        }
+      >
       <Row>
         <Col flex="1 1 420px">
           <Section id="in-h" title="1 · 客户原话" sub="一次提交同时生成任务和证据">
@@ -265,6 +283,7 @@ export default function Intake() {
           />
         </Section>
       </Grid>
+      </PageState>
     </PageMain>
   );
 }

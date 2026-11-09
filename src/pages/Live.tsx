@@ -5,6 +5,7 @@ import type { GatewayApi } from '../data/types';
 import { findSubtask, formatNumber, taskCode, toMinutes } from '../data/selectors';
 import { Radar } from '../ui/icons';
 import { Chip, DataTable, List, PageHeader, PageMain, Section } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelSection, SkelTable } from './_states';
 import { TINTS } from '../ui/tints';
 
 const clock = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
@@ -74,6 +75,19 @@ export default function Live() {
           </Chip>
         }
       />
+      <PageState
+        emptyTitle="还没有调用记录"
+        emptyHint="agent 开始读写网关后，实时读数和调用流水会出现在这里。"
+        emptyIcon="Live"
+        skeleton={
+          <>
+            <SkelSection><SkelCard title={false} height={160} /></SkelSection>
+            <SkelSection><SkelList rows={3} /></SkelSection>
+            <SkelSection><SkelTable rows={6} cols={7} /></SkelSection>
+            <SkelSection><SkelTable rows={4} cols={7} /></SkelSection>
+          </>
+        }
+      >
       <Section id="lv-h" title="现在">
         <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
           <Radar size={116} />
@@ -158,6 +172,7 @@ export default function Live() {
           })}
         />
       </Section>
+      </PageState>
     </PageMain>
   );
 }

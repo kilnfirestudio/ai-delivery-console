@@ -6,6 +6,7 @@ import { formatNumber } from '../data/selectors';
 import { BarList } from '../ui/charts';
 import { FlowArrow } from '../ui/icons';
 import { Chip, Col, DataTable, Grid, Legend, List, PageHeader, PageMain, Row, Section } from '../ui/primitives';
+import { PageState, SkelCard, SkelCards, SkelList, SkelRow, SkelSection, SkelTable } from './_states';
 
 const FONT = "Inter, 'Noto Sans SC', system-ui, sans-serif";
 
@@ -115,6 +116,25 @@ export default function Rules() {
   return (
     <PageMain>
       <PageHeader icon="Rules" title="决策规则" sub="五层组合：约束保底、规则裁决冲突、风险分配决策权、结果更新知识、元层慢速调参" />
+      <PageState
+        emptyTitle="还没有规则数据"
+        emptyHint="决策规则运行后，理想状态、五层策略、风险路由和委托规则会出现在这里。"
+        emptyIcon="Rules"
+        skeleton={
+          <>
+            <SkelSection><SkelCards count={5} min={320} lines={2} /></SkelSection>
+            <SkelSection><SkelCards count={5} min={150} lines={3} /></SkelSection>
+            <SkelRow min={340}>
+              <SkelSection><SkelCard title={false} height={300} /></SkelSection>
+              <SkelSection><SkelList rows={4} /></SkelSection>
+            </SkelRow>
+            <SkelRow min={360}>
+              <SkelSection><SkelTable rows={4} cols={3} /></SkelSection>
+              <SkelSection><SkelTable rows={3} cols={3} /></SkelSection>
+            </SkelRow>
+          </>
+        }
+      >
       <section className="tier1" aria-labelledby="ri-h">
         <h2 id="ri-h" style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600 }}>
           {`理想状态 · ${met} / ${r.ideals.length}`}
@@ -203,6 +223,7 @@ export default function Rules() {
           </Section>
         </Col>
       </Row>
+      </PageState>
     </PageMain>
   );
 }

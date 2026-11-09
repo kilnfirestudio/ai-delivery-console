@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useData } from '../data';
 import { ATTENTION_TONE, attentionHref, reviewQueue, waitState } from '../data/selectors';
 import { Chip, Note, PageHeader, PageMain, Rich } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection, SkelStats } from './_states';
 
 const GROUP_TONE = { 阻塞任务: 'risk', 需要你确认: 'you', 抽检与复验: 'queue', 看截图: 'you' } as const;
 
@@ -77,6 +78,20 @@ export default function Review() {
           <Chip key={g.name} tone={GROUP_TONE[g.name]}>{`${g.name} ${g.items.length}`}</Chip>
         ))}
       />
+      <PageState
+        emptyTitle="待审队列是空的"
+        emptyHint="需要你确认或决定的事会出现在这里；现在没有待办。"
+        emptyIcon="Review"
+        skeleton={
+          <>
+            <SkelSection><SkelStats count={6} min={170} /></SkelSection>
+            <SkelRow min={360}>
+              <SkelSection><SkelList rows={5} /></SkelSection>
+              <SkelSection><SkelCard title={false} height={320} /></SkelSection>
+            </SkelRow>
+          </>
+        }
+      >
       <section className="card" aria-labelledby="hl-h">
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <h2 id="hl-h" style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
@@ -311,6 +326,7 @@ export default function Review() {
           </section>
         )}
       </div>
+      </PageState>
     </PageMain>
   );
 }

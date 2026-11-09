@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useData, type Layer } from '../data';
 import { knowledgeHref } from '../data/selectors';
 import { Chip, Col, Legend, List, PageHeader, PageMain, Row, Section, Stage } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection } from './_states';
 import ForceGraph from './graph/ForceGraph';
 import { buildGraph, EDGE_STYLE, type EdgeKind } from './graph/model';
 
@@ -57,6 +58,17 @@ export default function Graph() {
   return (
     <PageMain>
       <PageHeader icon="Graph" title="知识图谱" sub="知识之间的取代、覆盖、冲突和共用证据，一张图看清。证据过时会沿着“依据同一证据”的线波及到相关条目" right={<Stage>阶段 3</Stage>} />
+      <PageState
+        emptyTitle="图谱里还没有知识"
+        emptyHint="确认候选、积累证据后，知识和它们之间的关系会在这里连成一张图。"
+        emptyIcon="Graph"
+        skeleton={
+          <SkelRow min={300}>
+            <SkelSection><SkelCard title={false} height={420} /></SkelSection>
+            <SkelSection><SkelList rows={5} /></SkelSection>
+          </SkelRow>
+        }
+      >
       <Row>
         <Col flex="1 1 640px">
           <Section id="gm-h" title="知识关系" sub="按层级从上到下排列；L2 按项目分区，L3 按客户隔离。每条知识是一个粒子：悬停高亮相连的条目，拖动后松手会弹回，点击选中">
@@ -128,6 +140,7 @@ export default function Graph() {
           </Section>
         </Col>
       </Row>
+      </PageState>
     </PageMain>
   );
 }

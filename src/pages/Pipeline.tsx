@@ -3,6 +3,7 @@ import { useData } from '../data';
 import { BarList } from '../ui/charts';
 import { FlowArrow } from '../ui/icons';
 import { Chip, Col, DataTable, PageHeader, PageMain, Row, Section, Stage } from '../ui/primitives';
+import { PageState, SkelCards, SkelList, SkelRow, SkelSection, SkelTable } from './_states';
 
 function FlowColumn({ title, big, children }: { title: string; big: string; children: ReactNode }) {
   return (
@@ -75,6 +76,21 @@ export default function Pipeline() {
   return (
     <PageMain>
       <PageHeader icon="Pipeline" title="采集与处理" sub="数据从哪来、怎么变成候选、最后有多少成了知识" />
+      <PageState
+        emptyTitle="还没有采集数据"
+        emptyHint="接入来源后，本周流量、批量导入和处理运行会出现在这里。"
+        emptyIcon="Pipeline"
+        skeleton={
+          <>
+            <SkelSection><SkelCards count={5} min={150} height={90} /></SkelSection>
+            <SkelRow min={320}>
+              <SkelSection><SkelTable rows={4} cols={6} /></SkelSection>
+              <SkelSection><SkelList rows={3} /></SkelSection>
+            </SkelRow>
+            <SkelSection><SkelTable rows={4} cols={7} /></SkelSection>
+          </>
+        }
+      >
       <Section id="pf-h" title="本周流量" sub="原始证据只追加；处理层只写候选区和索引，从不直接写 git" right={<Stage>持续采集与处理层全量 · 阶段 3</Stage>}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 24px 1fr 24px 1fr 24px 1.1fr 24px 1.1fr', gap: 6, alignItems: 'stretch', overflowX: 'auto' }}>
           {columns.map((col, i) => (
@@ -119,6 +135,7 @@ export default function Pipeline() {
         <div style={{ height: 16 }} />
         <DataTable minWidth={900} cols={['编号', '类型', '输入', '模型 · 提示词版本', '用时', '成本', '产出']} rows={p.runs.map((r) => [<span className="mono">{r.id}</span>, r.kind, r.input, r.model, r.time, `¥${r.cost}`, r.output])} />
       </Section>
+      </PageState>
     </PageMain>
   );
 }

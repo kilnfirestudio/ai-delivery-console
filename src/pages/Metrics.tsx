@@ -4,6 +4,7 @@ import { useData } from '../data';
 import { formatNumber } from '../data/selectors';
 import { GroupedBars, LineChart } from '../ui/charts';
 import { Chip, Col, DataTable, Grid, Legend, List, PageHeader, PageMain, Row, Section } from '../ui/primitives';
+import { PageState, SkelCard, SkelList, SkelRow, SkelSection, SkelStats, SkelTable } from './_states';
 
 // Time windows for the core-metric charts. 近 12 周 is the full 12-week dataset; 近 4 周 trims to the tail.
 const RANGES = [
@@ -42,6 +43,26 @@ export default function Metrics() {
           </div>
         }
       />
+      <PageState
+        emptyTitle="还没有指标数据"
+        emptyHint="先有基线，运行几周后核心指标、投入产出和阶段进度会出现在这里。"
+        emptyIcon="Metrics"
+        skeleton={
+          <>
+            <SkelSection><SkelStats count={3} min={240} /></SkelSection>
+            <SkelRow min={440}>
+              <SkelSection><SkelCard title={false} height={180} /></SkelSection>
+              <SkelSection><SkelCard title={false} height={180} /></SkelSection>
+            </SkelRow>
+            <SkelRow min={360}>
+              <SkelSection><SkelCard title={false} height={160} /></SkelSection>
+              <SkelSection><SkelList rows={4} /></SkelSection>
+            </SkelRow>
+            <SkelSection><SkelList rows={4} /></SkelSection>
+            <SkelSection><SkelTable rows={3} cols={3} /></SkelSection>
+          </>
+        }
+      >
       <section className="tier1" aria-labelledby="fj-h" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, alignItems: 'flex-end' }}>
           <div>
@@ -154,6 +175,7 @@ export default function Metrics() {
           ])}
         />
       </Section>
+      </PageState>
     </PageMain>
   );
 }

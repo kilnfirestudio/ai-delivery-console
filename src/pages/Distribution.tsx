@@ -1,5 +1,6 @@
 import { useData } from '../data';
 import { Chip, Col, DataTable, Grid, List, PageHeader, PageMain, Row, Section } from '../ui/primitives';
+import { PageState, SkelCards, SkelList, SkelRow, SkelSection, SkelTable } from './_states';
 
 export default function Distribution() {
   const d = useData();
@@ -17,6 +18,21 @@ export default function Distribution() {
   return (
     <PageMain>
       <PageHeader icon="Distribution" title="分发" sub="知识通过四种通道到达 agent：热区本地保底，网关远程增强" />
+      <PageState
+        emptyTitle="还没有分发数据"
+        emptyHint="通道、热区文件、设备同步和技能会在配置后出现在这里。"
+        emptyIcon="Distribution"
+        skeleton={
+          <>
+            <SkelCards count={4} min={220} />
+            <SkelSection><SkelTable rows={3} cols={5} /></SkelSection>
+            <SkelRow min={360}>
+              <SkelSection><SkelTable rows={4} cols={4} /></SkelSection>
+              <SkelSection><SkelList rows={3} /></SkelSection>
+            </SkelRow>
+          </>
+        }
+      >
       <Grid min={220}>
         {ds.channels.map((c) => (
           <div key={c.name} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -102,6 +118,7 @@ export default function Distribution() {
           </Section>
         </Col>
       </Row>
+      </PageState>
     </PageMain>
   );
 }

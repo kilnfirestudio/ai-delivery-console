@@ -4,6 +4,7 @@ import { R } from '../app/routes';
 import { useData } from '../data';
 import { LEVEL_TONE } from '../data/selectors';
 import { Chip, Col, DataTable, Grid, List, PageHeader, PageMain, Row, Section } from '../ui/primitives';
+import { PageState, SkelCards, SkelList, SkelRow, SkelSection, SkelTable } from './_states';
 
 export default function Clients() {
   const d = useData();
@@ -21,6 +22,20 @@ export default function Clients() {
   return (
     <PageMain>
       <PageHeader icon="Clients" title="客户" sub="客户层的知识和证据按客户加密隔离；合作结束可以整体销毁，不影响 git" />
+      <PageState
+        emptyTitle="还没有客户"
+        emptyHint="登记带客户的需求后，客户档案、知识和隔离状态会出现在这里。"
+        emptyIcon="Clients"
+        skeleton={
+          <>
+            <SkelCards count={3} min={260} lines={5} />
+            <SkelRow min={360}>
+              <SkelSection><SkelTable rows={4} cols={4} /></SkelSection>
+              <SkelSection><SkelList rows={4} /></SkelSection>
+            </SkelRow>
+          </>
+        }
+      >
       <Grid min={260}>
         {d.clientProfiles.map((p) => {
           const c = d.clients.find((x) => x.id === p.clientId)!;
@@ -97,6 +112,7 @@ export default function Clients() {
           </Section>
         </Col>
       </Row>
+      </PageState>
     </PageMain>
   );
 }
