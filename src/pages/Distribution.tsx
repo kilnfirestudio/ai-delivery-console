@@ -39,7 +39,7 @@ export default function Distribution() {
             <span className="mono">{h.version}</span>,
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
               <div title={`${h.lines} / ${ds.hotZoneLimit} 行`} style={{ height: 8, background: 'rgba(255,255,255,.05)', borderRadius: 4 }}>
-                <div className="fill" style={{ width: `${Math.round((h.lines / ds.hotZoneLimit) * 100)}%`, height: 8, background: h.lines > ds.hotZoneWarnAt ? '#DC6803' : '#7C6CFF', borderRadius: 4 }} />
+                <div className={h.lines > ds.hotZoneWarnAt ? 'fill f-you' : 'fill'} style={{ width: `${Math.round((h.lines / ds.hotZoneLimit) * 100)}%`, height: 8, borderRadius: 4, ...(h.lines > ds.hotZoneWarnAt ? null : { background: '#7C6CFF' }) }} />
               </div>
               <span style={{ fontSize: 12 }}>{`${h.lines} / ${ds.hotZoneLimit} 行`}</span>
             </div>,
@@ -84,7 +84,7 @@ export default function Distribution() {
         <Col flex="1 1 380px">
           <Section id="dd-h" title="最近一次变化">
             <pre className="mono well" style={{ margin: 0, padding: 14, borderRadius: 10, fontSize: 12, lineHeight: 1.8, overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
-              <span style={{ color: '#A1A6B0' }}>{`${ds.lastChange.project} · ${ds.lastChange.from} → ${ds.lastChange.to} · ${ds.lastChange.at} · ${ds.lastChange.run}`}</span>
+              <span className="muted">{`${ds.lastChange.project} · ${ds.lastChange.from} → ${ds.lastChange.to} · ${ds.lastChange.at} · ${ds.lastChange.run}`}</span>
               {ds.lastChange.lines.map(([op, id]) => {
                 const k = kn(id);
                 const text = op === '-' && k?.supersededBy ? `${k.text}（${id}，已被 ${k.supersededBy} 取代）` : `${k?.text}（${id}）`;
