@@ -281,3 +281,47 @@ export function Legend({ items }: { items: [swatch: CSSProperties, label: ReactN
 export function CountUp({ to, style }: { to: number; style?: CSSProperties }) {
   return <span className="cu" aria-label={String(to)} style={{ ['--to' as string]: to, ...style }} />;
 }
+
+// ───────────────────────── loading / empty / error ─────────────────────────
+
+/**
+ * Block-shaped loading placeholder — never a full-page spinner. `lines` stacks bars to echo a text block;
+ * `height` makes a single block (e.g. a chart or tile). The shimmer stops under reduced motion (see .skel).
+ */
+export function Skeleton({ lines = 1, height, width = '100%', style }: { lines?: number; height?: number; width?: number | string; style?: CSSProperties }) {
+  if (height !== undefined) return <span className="skel" aria-hidden="true" style={{ display: 'block', height, width, ...style }} />;
+  return (
+    <span aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
+      {Array.from({ length: lines }, (_, i) => (
+        <span key={i} className="skel" style={{ display: 'block', height: 12, width: i === lines - 1 && lines > 1 ? '60%' : width }} />
+      ))}
+    </span>
+  );
+}
+
+/** Empty state: says why it is empty and what to do next. `action` is an optional call-to-action. */
+export function EmptyState({ title, hint, icon, action }: { title: string; hint?: string; icon?: IconName; action?: ReactNode }) {
+  return (
+    <div className="well" role="status" style={{ padding: '32px 24px', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }}>
+      {icon && <GlassIcon name={icon} size={44} />}
+      <span style={{ fontSize: 15, fontWeight: 600 }}>{title}</span>
+      {hint && <span className="muted" style={{ fontSize: 13, lineHeight: 1.6, maxWidth: 380 }}>{hint}</span>}
+      {action}
+    </div>
+  );
+}
+
+/** Error state: says where it broke and offers a retry. `onRetry` renders the 重试 button. */
+export function ErrorState({ title = '这块没能加载出来', detail, onRetry }: { title?: string; detail?: string; onRetry?: () => void }) {
+  return (
+    <div role="alert" style={{ padding: '24px', borderRadius: 12, background: NOTE_BG.risk, border: '1px solid rgba(248,81,73,.3)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+      <span style={{ fontSize: 15, fontWeight: 600 }}>{title}</span>
+      {detail && <span className="muted" style={{ fontSize: 13, lineHeight: 1.6 }}>{detail}</span>}
+      {onRetry && (
+        <button type="button" className="btn" onClick={onRetry}>
+          重试
+        </button>
+      )}
+    </div>
+  );
+}

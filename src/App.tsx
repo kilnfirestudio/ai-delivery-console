@@ -2,6 +2,7 @@ import { Suspense, useEffect, type ComponentType } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import { pages } from './pages';
+import { DataProvider, devDataState } from './data';
 
 function Titled({ title, page: Page }: { title: string; page: ComponentType }) {
   useEffect(() => {
@@ -21,14 +22,18 @@ function NotFound() {
 }
 
 export default function App() {
+  // Dev-mode ?data=loading|empty|error drives F-09 states; production always gets the ready state.
+  const { search } = useLocation();
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        {pages.map((p) => (
-          <Route key={p.path} path={p.path} element={<Titled title={p.title} page={p.component} />} />
-        ))}
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </Routes>
+    <DataProvider value={devDataState(search)}>
+      <Routes>
+        <Route element={<AppShell />}>
+          {pages.map((p) => (
+            <Route key={p.path} path={p.path} element={<Titled title={p.title} page={p.component} />} />
+          ))}
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </DataProvider>
   );
 }
