@@ -1,8 +1,16 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../data';
 import { formatNumber } from '../data/selectors';
 import { GroupedBars, LineChart } from '../ui/charts';
-import { Chip, Col, DataTable, Grid, Legend, List, PageHeader, PageMain, Row, Section, SegControl } from '../ui/primitives';
+import { Chip, Col, DataTable, Grid, Legend, List, PageHeader, PageMain, Row, Section } from '../ui/primitives';
+
+// Time windows for the core-metric charts. 近 12 周 is the full 12-week dataset; 近 4 周 trims to the tail.
+const RANGES = [
+  { label: '近 4 周', weeks: 4 },
+  { label: '近 12 周', weeks: 12 },
+  { label: '全部', weeks: Infinity },
+] as const;
 
 export default function Metrics() {
   const d = useData();
@@ -11,6 +19,12 @@ export default function Metrics() {
   const effortWeeks = o.weeks.slice(o.stage1aWeek);
   const crossWeek = effortWeeks[o.effortSeries.output.findIndex((v, i) => v > o.effortSeries.input[i])];
   const totalKnowledge = d.knowledgeSummary.layers.reduce((s, l) => s + l.counts.已确认, 0);
+  const [range, setRange] = useState(1);
+  // Slice the shared weeks axis to the chosen window; each metric's values slice to the same tail length.
+  const span = Math.min(RANGES[range].weeks, o.weeks.length);
+  const from = o.weeks.length - span;
+  const weeks = o.weeks.slice(from);
+  const markerInWindow = o.stage1aWeek >= from ? o.stage1aWeek - from : undefined;
 
   return (
     <PageMain>
@@ -19,10 +33,13 @@ export default function Metrics() {
         title="指标"
         sub="只保留能回答“知识库有没有用”的指标。先有基线，再看变化；小心指标变成目标后失去意义"
         right={
-          <>
-            <SegControl label="时间范围" options={['近 4 周', '近 12 周', '全部']} pressed={1} />
-            <SegControl label="项目" options={['全部项目', ...d.projects.filter((p) => p.line !== '维护').map((p) => p.short)]} />
-          </>
+          <div className="seg" role="group" aria-label="时间范围">
+            {RANGES.map((r, i) => (
+              <button key={r.label} type="button" aria-pressed={i === range} onClick={() => setRange(i)}>
+                {r.label}
+              </button>
+            ))}
+          </div>
         }
       />
       <section className="tier1" aria-labelledby="fj-h" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -56,7 +73,8 @@ export default function Metrics() {
       </section>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: 16 }}>
         {o.coreMetrics.map((m) => {
-          const last = m.values[m.values.length - 1];
+          const values = m.values.slice(from);
+          const last = values[values.length - 1];
           return (
             <section key={m.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
@@ -66,7 +84,7 @@ export default function Metrics() {
               <span className="muted" style={{ fontSize: 12 }}>
                 {m.question}
               </span>
-              <LineChart values={m.values} labels={o.weeks} base={m.base} baseLabel={`基线 ${m.base}${m.unit}`} lo={m.range[0]} hi={m.range[1]} unit={m.unit} marker={o.stage1aWeek} markerLabel="阶段 1a" desc={`${m.name}，近 12 周从 ${m.values[0]}${m.unit} 到 ${last}${m.unit}，基线 ${m.base}${m.unit}`} />
+              <LineChart values={values} labels={weeks} base={m.base} baseLabel={`基线 ${m.base}${m.unit}`} lo={m.range[0]} hi={m.range[1]} unit={m.unit} marker={markerInWindow} markerLabel="阶段 1a" desc={`${m.name}，${weeks[0]} 到 ${weeks[weeks.length - 1]} 从 ${values[0]}${m.unit} 到 ${last}${m.unit}，基线 ${m.base}${m.unit}`} />
             </section>
           );
         })}
