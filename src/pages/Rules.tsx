@@ -20,7 +20,7 @@ function RiskMatrix({ d }: { d: ConsoleData }) {
       <defs>
         <radialGradient id="pin" cx="35%" cy="30%" r="75%">
           <stop offset="0" stopColor="#FDB022" />
-          <stop offset=".6" stopColor="#DC6803" />
+          <stop offset=".6" stopColor="#E3A008" />
           <stop offset="1" stopColor="#93370D" />
         </radialGradient>
         <filter id="ps" x="-60%" y="-60%" width="220%" height="220%">
@@ -89,7 +89,7 @@ function RiskMatrix({ d }: { d: ConsoleData }) {
             {p.mustYou ? (
               <>
                 <rect x={p.x - 8} y={p.y - 8} width="16" height="16" rx="3" fill="#16171A" stroke="#B54708" strokeWidth="2.5" filter="url(#ps)" />
-                <rect x={p.x - 3} y={p.y - 3} width="6" height="6" rx="1" fill="#DC6803" />
+                <rect x={p.x - 3} y={p.y - 3} width="6" height="6" rx="1" fill="#E3A008" />
               </>
             ) : (
               <>
@@ -161,7 +161,7 @@ export default function Rules() {
             <RiskMatrix d={d} />
             <Legend
               items={[
-                [{ background: 'radial-gradient(circle at 35% 30%, #FDB022, #DC6803 60%, #93370D)', borderRadius: 6 }, '按象限交给你'],
+                [{ background: 'radial-gradient(circle at 35% 30%, #FDB022, #E3A008 60%, #93370D)', borderRadius: 6 }, '按象限交给你'],
                 [{ background: '#16171A', border: '2.5px solid #B54708', boxShadow: '0 1px 2px rgba(16,24,40,.3)' }, '必须由你确认的类别（红线、跨项目上提、客户层、取代已验证）'],
               ]}
             />
