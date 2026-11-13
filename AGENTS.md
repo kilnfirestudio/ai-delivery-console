@@ -4,7 +4,7 @@
 
 ## 这是什么
 
-「AI 交付全局控制台」：把“需求 → 拆分 → 多 agent 并行开发 → 回归 → 交付 → 知识回写”可视化的控制台。目前只有前端，数据来自 `src/data/mock/`，后端还没开始写。项目背景和目录说明见 [README.md](README.md)。
+「AI 交付全局控制台」：把“需求 → 拆分 → 多 agent 并行开发 → 回归 → 交付 → 知识回写”可视化的控制台。前端目前读取 `src/data/mock/`；后端位于独立的 `server/`，接入进度见其 README。项目背景和目录说明见 [README.md](README.md)。
 
 ## 技术栈和命令
 
@@ -15,6 +15,16 @@ npm ci           # 安装（用 ci，不要随手改 package-lock.json）
 npm run dev      # 本地开发，默认 http://localhost:5173
 npm run lint     # ESLint
 npm run build    # tsc -b 类型检查 + vite 打包
+```
+
+后端：Node 22 + TypeScript + Fastify 5 + MCP TypeScript SDK；业务存储基线为 PostgreSQL（由后续存储 Issue 接入）。依赖独立放在 `server/package.json`。
+
+```bash
+npm ci --prefix server
+npm run lint --prefix server
+npm run test --prefix server  # 含类型检查、构建、单元与 MCP 协议集成测试
+npm run build --prefix server
+npm run dev --prefix server  # 需配置 IDENTITIES_FILE，详见 server/README.md
 ```
 
 开 PR 前必须本地跑过 `npm run lint` 和 `npm run build`，两个都要零报错。CI（`.github/workflows/ci.yml`）会再跑一遍，CI 不绿的 PR 不审。
@@ -72,7 +82,7 @@ npm run build    # tsc -b 类型检查 + vite 打包
 
 ## 后端
 
-后端代码还没有开始写。做第一个后端 Issue 的 agent 在 PR 里提出目录结构（建议放在 `server/`，不要和前端共用 `package.json`），同时补上对应的 CI 步骤，并更新本文件的“技术栈和命令”一节。在那之前，后端 PR 不要修改 `src/`。
+后端位于 `server/`，不要与前端共用 `package.json`。后端改动必须通过独立 CI；新增命令时更新本文件的“技术栈和命令”一节。前后端联调前，后端 PR 不修改前端 `src/`。存储未接入时必须明确返回不可用，不得把内存示例当作持久化实现。
 
 ## 验收流程
 
